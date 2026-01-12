@@ -15,14 +15,22 @@ function ConversationList({ onSelectConversation, activeConversationId }: { onSe
 
   const conversationsQuery = useMemoFirebase(() => {
     if (!user) return null;
+    // Simplified query to fetch recent conversations, filtering will happen client-side
     return query(
       collection(firestore, 'conversations'), 
-      where('participants', 'array-contains', user.uid),
-      orderBy('lastMessageTimestamp', 'desc')
+      orderBy('lastMessageTimestamp', 'desc'),
+      limit(20) // Limit to a reasonable number to avoid fetching too much data
     );
   }, [user, firestore]);
   
-  const { data: conversations, isLoading } = useCollection(conversationsQuery);
+  const { data: allConversations, isLoading } = useCollection(conversationsQuery);
+
+  // Filter conversations on the client-side
+  const conversations = useMemo(() => {
+    if (!user || !allConversations) return [];
+    return allConversations.filter(convo => convo.participants?.includes(user.uid));
+  }, [allConversations, user]);
+
 
   const getOtherParticipant = (convo: any) => {
     if (!user) return null;
