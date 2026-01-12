@@ -9,7 +9,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {googleAI} from '@genkit-ai/google-genai';
 
 const IdentifyPetBreedFromImageInputSchema = z.object({
   photoDataUri: z
@@ -46,14 +45,7 @@ const identifyPetBreedFromImageFlow = ai.defineFlow(
     outputSchema: IdentifyPetBreedFromImageOutputSchema,
   },
   async input => {
-    const {output} = await ai.generate({
-        model: googleAI.model('gemini-1.5-flash'),
-        prompt: `You are an expert in pet breeds. Analyze the image and identify the breed of the pet.  Return your best guess along with a confidence level (0-1).
-
-Photo: {{media url=photoDataUri}}`,
-        input,
-        output: {schema: IdentifyPetBreedFromImageOutputSchema}
-    });
+    const {output} = await prompt(input);
     return output!;
   }
 );
