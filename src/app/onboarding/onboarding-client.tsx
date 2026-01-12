@@ -53,6 +53,8 @@ const onboardingSchema = z.object({
 });
 
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
+type PetFormValues = z.infer<typeof petSchema>;
+
 
 export function OnboardingClient() {
   const { user, isUserLoading } = useUser();
@@ -125,9 +127,9 @@ export function OnboardingClient() {
       const petIds: string[] = [];
 
       // Create pet documents
-      data.pets.forEach((petData) => {
+      data.pets.forEach((petData: PetFormValues) => {
         if (petData.name && petData.breed && petData.age) {
-          const petRef = doc(firestore, 'pets', crypto.randomUUID());
+          const petRef = doc(collection(firestore, 'pets'));
           batch.set(petRef, {
             ...petData,
             ownerId: user.uid,
@@ -389,5 +391,3 @@ export function OnboardingClient() {
     </FormProvider>
   );
 }
-
-    

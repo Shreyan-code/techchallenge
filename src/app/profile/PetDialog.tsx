@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, type ReactNode, useEffect } from 'react';
+import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { doc, collection, arrayUnion } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,7 +28,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, X } from 'lucide-react';
 import { identifyPetBreedFromImage } from '@/ai/flows/identify-pet-breed-from-image';
 
 const petSchema = z.object({
@@ -35,7 +36,7 @@ const petSchema = z.object({
   breed: z.string().min(1, 'Pet breed is required'),
   age: z.string().min(1, 'Pet age is required'),
   bio: z.string().max(200, 'Bio must be 200 characters or less').optional(),
-  imageUrl: z.string().url('Invalid URL').optional(),
+  imageUrl: z.string().optional(),
 });
 
 type PetFormValues = z.infer<typeof petSchema>;
@@ -60,7 +61,7 @@ export function PetDialog({ pet, children }: PetDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isIdentifying, setIsIdentifying] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
 
   const form = useForm<PetFormValues>({
@@ -71,17 +72,18 @@ export function PetDialog({ pet, children }: PetDialogProps) {
   useEffect(() => {
     if (isOpen) {
       form.reset(pet || { name: '', breed: '', age: '', bio: '', imageUrl: '' });
-      setImageFile(null);
+      setImagePreview(pet?.imageUrl || null);
     }
   }, [isOpen, pet, form]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setImageFile(file);
       setIsIdentifying(true);
       try {
         const dataUri = await fileToDataUri(file);
+        setImagePreview(dataUri);
+        form.setValue('imageUrl', dataUri);
         const result = await identifyPetBreedFromImage({ photoDataUri: dataUri });
         if (result.identifiedBreed) {
           form.setValue('breed', result.identifiedBreed);
@@ -95,6 +97,11 @@ export function PetDialog({ pet, children }: PetDialogProps) {
       }
     }
   };
+  
+  const removePetImage = () => {
+      setImagePreview(null);
+      form.setValue('imageUrl', '');
+  }
 
 
   const onSubmit = async (data: PetFormValues) => {
@@ -102,15 +109,20 @@ export function PetDialog({ pet, children }: PetDialogProps) {
     setIsSubmitting(true);
 
     try {
+      const finalData = {
+        ...data,
+        imageUrl: form.getValues('imageUrl') || (pet ? '' : `https://picsum.photos/seed/${crypto.randomUUID()}/200`)
+      };
+
       if (pet) {
         // Update existing pet
         const petRef = doc(firestore, 'pets', pet.id);
-        updateDocumentNonBlocking(petRef, data);
+        updateDocumentNonBlocking(petRef, finalData);
         toast({ title: 'Pet Updated!', description: `${data.name}'s profile has been updated.` });
       } else {
         // Add new pet
         const petRef = doc(collection(firestore, 'pets'));
-        const newPet = { ...data, id: petRef.id, ownerId: user.uid };
+        const newPet = { ...finalData, id: petRef.id, ownerId: user.uid };
         setDocumentNonBlocking(petRef, newPet, {});
 
         // Update user's petIds
@@ -202,9 +214,47 @@ export function PetDialog({ pet, children }: PetDialogProps) {
             />
             <FormItem>
               <FormLabel>Photo</FormLabel>
-               <FormControl>
-                <Input type="file" accept="image/*" onChange={handleFileChange} disabled={isIdentifying} />
-              </FormControl>
+              {imagePreview ? (
+                <div className="relative group w-full aspect-video border-2 border-dashed rounded-lg flex items-center justify-center">
+                    <Image
+                        src={imagePreview}
+                        alt="Pet preview"
+                        fill
+                        className="object-contain rounded-md"
+                    />
+                    <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        onClick={removePetImage}
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+              ) : (
+                <label
+                    htmlFor="pet-image"
+                    className="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                >
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Upload className="w-8 h-8 mb-3 text-muted-foreground" />
+                    <p className="mb-2 text-sm text-muted-foreground">
+                        <span className="font-semibold">Upload an image</span>
+                    </p>
+                    </div>
+                      <FormControl>
+                        <Input
+                            id="pet-image"
+                            type="file"
+                            className="hidden"
+                            accept="image/png, image/jpeg, image/webp"
+                            onChange={handleFileChange}
+                            disabled={isIdentifying}
+                        />
+                      </FormControl>
+                </label>
+              )}
               {isIdentifying && <p className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin"/> Identifying breed...</p>}
             </FormItem>
 

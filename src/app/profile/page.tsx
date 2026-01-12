@@ -121,8 +121,9 @@ export default function ProfilePage() {
                     src={pet.imageUrl || `https://picsum.photos/seed/${pet.id}/200`}
                     alt={pet.name}
                     data-ai-hint="dog portrait"
-                    fill
-                    className="object-cover"
+                    width={200}
+                    height={200}
+                    className="object-cover w-full h-full"
                   />
                 </div>
                 <div>
