@@ -13,13 +13,14 @@ function ConversationList({ onSelectConversation, activeConversationId }: { onSe
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const conversationsQuery = useMemoFirebase(() => 
-    user ? query(
+  const conversationsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(
       collection(firestore, 'conversations'), 
       where('participants', 'array-contains', user.uid),
       orderBy('lastMessageTimestamp', 'desc')
-    ) : null
-  , [user, firestore]);
+    );
+  }, [user, firestore]);
   
   const { data: conversations, isLoading } = useCollection(conversationsQuery);
 
