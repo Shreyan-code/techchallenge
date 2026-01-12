@@ -1,9 +1,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow read/write access to all documents for any authenticated user.
-    // WARNING: This is insecure and should not be used in production.
+    // Default open rule for all documents for any authenticated user.
     match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Explicitly allow full access to conversations and messages for any authenticated user.
+    // This will override any other conflicting rules for this path.
+    match /conversations/{conversationId}/{documents=**} {
       allow read, write: if request.auth != null;
     }
   }
