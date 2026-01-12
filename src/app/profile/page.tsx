@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -39,14 +39,16 @@ export default function ProfilePage() {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
 
   const petsQuery = useMemoFirebase(() => {
-    if (!firestore || !userProfile?.petIds || userProfile.petIds.length === 0) {
+    if (!firestore || !user) {
       return null;
     }
+    // This query now fetches pets where the ownerId matches the current user's UID.
+    // This aligns with the new security rule.
     return query(
       collection(firestore, 'pets'),
-      where('id', 'in', userProfile.petIds)
+      where('ownerId', '==', user.uid)
     );
-  }, [firestore, userProfile?.petIds]);
+  }, [firestore, user]);
 
   const { data: pets, isLoading: arePetsLoading } = useCollection(petsQuery);
 
@@ -61,7 +63,7 @@ export default function ProfilePage() {
     updateDocumentNonBlocking(userRef, { petIds: updatedPetIds });
   };
   
-  const isLoading = isUserLoading || isProfileLoading || (userProfile?.petIds?.length > 0 && arePetsLoading);
+  const isLoading = isUserLoading || isProfileLoading || arePetsLoading;
 
   if (isLoading) {
     return (

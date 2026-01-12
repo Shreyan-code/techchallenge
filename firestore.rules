@@ -98,9 +98,10 @@ service cloud.firestore {
      * @allow (update, delete) A user can update/delete a pet document if they are the owner.
      */
     match /pets/{petId} {
-      allow read, create: if isSignedIn() && isPetOwner(request.auth.uid);
-      allow update, delete: if isSignedIn() && isPetOwner(request.auth.uid) && resource.data.ownerId == request.auth.uid;
-      allow list: if false;
+      allow get: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isPetOwner(request.auth.uid);
+      allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow list: if isSignedIn() && request.query.where.get('ownerId', '') == request.auth.uid;
     }
   }
 }
