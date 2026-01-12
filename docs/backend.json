@@ -177,6 +177,44 @@
         "content",
         "createdAt"
       ]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Represents a private chat between two or more users.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the conversation." },
+        "participants": { "type": "array", "items": { "type": "string" }, "description": "Array of user UIDs participating in the conversation." },
+        "participantDetails": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "uid": { "type": "string" },
+              "userName": { "type": "string" },
+              "profilePicture": { "type": "string", "format": "uri" }
+            },
+            "required": ["uid", "userName"]
+          },
+          "description": "Denormalized data of participants for easy display."
+        },
+        "lastMessage": { "type": "string", "description": "The content of the most recent message." },
+        "lastMessageTimestamp": { "type": "string", "format": "date-time", "description": "Timestamp of the last message." }
+      },
+      "required": ["id", "participants", "participantDetails"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Represents a single message within a conversation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the message." },
+        "conversationId": { "type": "string", "description": "The ID of the conversation this message belongs to." },
+        "senderId": { "type": "string", "description": "The UID of the user who sent the message." },
+        "content": { "type": "string", "description": "The text content of the message." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the message was sent." }
+      },
+      "required": ["id", "conversationId", "senderId", "content", "createdAt"]
     }
   },
   "auth": {
@@ -191,71 +229,63 @@
         "path": "users/{userId}",
         "definition": {
           "entityName": "UserProfile",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          },
-          "description": "Stores user profile data, using the Firebase Auth UID as the document ID. Supports path-based ownership for simple security rules.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The Firebase Auth UID of the user."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/UserProfile" },
+          "description": "Stores user profile data, using the Firebase Auth UID as the document ID.",
+          "params": [{ "name": "userId", "description": "The Firebase Auth UID of the user." }]
         }
       },
       {
         "path": "pets/{petId}",
         "definition": {
           "entityName": "Pet",
-          "schema": {
-            "$ref": "#/backend/entities/Pet"
-          },
-          "description": "Stores individual pet data. Security rules should ensure only the owner can manage their pet's data.",
-          "params": [
-            {
-              "name": "petId",
-              "description": "The unique ID of the pet."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Pet" },
+          "description": "Stores individual pet data.",
+          "params": [{ "name": "petId", "description": "The unique ID of the pet." }]
         }
       },
       {
         "path": "posts/{postId}",
         "definition": {
           "entityName": "Post",
-          "schema": {
-            "$ref": "#/backend/entities/Post"
-          },
-          "description": "Stores all user-generated posts. This allows for a global feed.",
-          "params": [
-            {
-              "name": "postId",
-              "description": "The unique ID of the post."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Post" },
+          "description": "Stores all user-generated posts.",
+          "params": [{ "name": "postId", "description": "The unique ID of the post." }]
         }
       },
       {
         "path": "posts/{postId}/comments/{commentId}",
         "definition": {
           "entityName": "Comment",
-          "schema": {
-            "$ref": "#/backend/entities/Comment"
-          },
+          "schema": { "$ref": "#/backend/entities/Comment" },
           "description": "Stores comments for a specific post.",
           "params": [
-            {
-              "name": "postId",
-              "description": "The unique ID of the post."
-            },
-            {
-              "name": "commentId",
-              "description": "The unique ID of the comment."
-            }
+            { "name": "postId", "description": "The unique ID of the post." },
+            { "name": "commentId", "description": "The unique ID of the comment." }
+          ]
+        }
+      },
+       {
+        "path": "conversations/{conversationId}",
+        "definition": {
+          "entityName": "Conversation",
+          "schema": { "$ref": "#/backend/entities/Conversation" },
+          "description": "Stores metadata for a conversation between users.",
+          "params": [{ "name": "conversationId", "description": "The unique ID of the conversation." }]
+        }
+      },
+      {
+        "path": "conversations/{conversationId}/messages/{messageId}",
+        "definition": {
+          "entityName": "Message",
+          "schema": { "$ref": "#/backend/entities/Message" },
+          "description": "Stores messages for a specific conversation.",
+          "params": [
+            { "name": "conversationId", "description": "The unique ID of the conversation." },
+            { "name": "messageId", "description": "The unique ID of the message." }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support user authentication and profile management for the PetConnect application. It prioritizes Authorization Independence by avoiding hierarchical `get()` calls in security rules. User profiles are stored in a dedicated collection (`users`) using their unique user ID as the document ID. This structure enables simple, path-based security rules for user profile access, ensuring only the authenticated user can read or write their own profile. This eliminates the need to denormalize any authorization data. The `users/{userId}` path structure naturally supports QAPs because list operations are inherently scoped to the user's own data. The `pets` and `posts` collections are top-level collections to allow for easy querying across all pets or posts, with an `ownerId` or `authorId` field respectively to link back to the user. Comments are a subcollection of posts to keep them organized."
+    "reasoning": "The Firestore structure is designed for a social media application for pets. It includes top-level collections for users, pets, posts, and conversations to allow for scalable queries. Comments and messages are stored as subcollections within their respective parent documents (posts and conversations) to maintain a logical hierarchy and enable efficient retrieval. Denormalized data in conversations (participantDetails) is used to avoid extra lookups when displaying conversation lists."
   }
 }
