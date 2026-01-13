@@ -18,8 +18,7 @@ function ConversationList({ onSelectConversation, activeConversationId }: { onSe
     if (!user) return null;
     return query(
       collection(firestore, 'conversations'),
-      where('participants', 'array-contains', user.uid),
-      orderBy('lastMessageTimestamp', 'desc')
+      where('participants', 'array-contains', user.uid)
     );
   }, [user, firestore]);
   
@@ -38,11 +37,18 @@ function ConversationList({ onSelectConversation, activeConversationId }: { onSe
   if (!conversations || conversations.length === 0) {
     return <div className="p-4 text-center text-sm text-muted-foreground">No conversations yet.</div>
   }
+  
+  // Manual sort on client
+  const sortedConversations = conversations.sort((a, b) => {
+    const timeA = a.lastMessageTimestamp?.seconds || 0;
+    const timeB = b.lastMessageTimestamp?.seconds || 0;
+    return timeB - timeA;
+  });
 
   return (
     <ScrollArea className="flex-1">
       <div className="p-2">
-        {conversations.map((convo) => {
+        {sortedConversations.map((convo) => {
           const otherParticipant = getOtherParticipant(convo);
           if (!otherParticipant) return null;
           
