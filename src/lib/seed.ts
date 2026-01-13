@@ -1,4 +1,5 @@
 
+
 // To run this script, use: npm run seed
 // This script will populate your Firestore database with dummy data.
 // Before running, make sure you have authenticated with the Firebase CLI
@@ -41,6 +42,7 @@ const auth = getAuth();
 const DUMMY_USERS = [
   {
     email: 'sp@gmail.com',
+    password: 'password',
     firstName: 'Sara',
     lastName: 'Palmer',
     userName: 'sara_paws',
@@ -55,12 +57,13 @@ const DUMMY_USERS = [
         breed: 'Golden Retriever',
         age: '4 years',
         bio: 'A certified good boy who loves chasing squirrels and napping in sunbeams.',
-        imageUrl: 'https://picsum.photos/seed/max/400/400'
+        imageUrl: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxnb2xkZW4lMjByZXRyaWV2ZXIlMjBkb2d8ZW58MHx8fHwxNzY4MjA3MTQ3fDA&ixlib=rb-4.1.0&q=80&w=1080'
       },
     ],
   },
   {
     email: 'ar@gmail.com',
+    password: 'password',
     firstName: 'Arjun',
     lastName: 'Rao',
     userName: 'arjun_and_luna',
@@ -75,12 +78,13 @@ const DUMMY_USERS = [
         breed: 'Indie',
         age: '2 years',
         bio: 'I may be small, but I am the queen of this castle. I enjoy knocking things off tables.',
-        imageUrl: 'https://picsum.photos/seed/luna/400/400'
+        imageUrl: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjYXR8ZW58MHx8fHwxNzY4MjA3MTQ5fDA&ixlib=rb-4.1.0&q=80&w=1080'
       },
     ],
   },
   {
     email: 'cw@gmail.com',
+    password: 'password',
     firstName: 'Chen',
     lastName: 'Wang',
     userName: 'chen_walks_dogs',
@@ -95,19 +99,20 @@ const DUMMY_USERS = [
         breed: 'French Bulldog',
         age: '3 years',
         bio: 'Likes: snacks. Dislikes: bath time.',
-        imageUrl: 'https://picsum.photos/seed/rocky/400/400'
+        imageUrl: 'https://images.unsplash.com/photo-1583512603805-3cc6b41f3edb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxGcmVuY2glMjBCdWxsZG9nfGVufDB8fHx8MTc2ODIwNzE0OXww&ixlib=rb-4.1.0&q=80&w=1080'
       },
       {
         name: 'Apollo',
         breed: 'Beagle',
         age: '5 years',
         bio: 'My nose knows all the secrets. I will lead you to the best smells.',
-        imageUrl: 'https://picsum.photos/seed/apollo/400/400'
+        imageUrl: 'https://images.unsplash.com/photo-1543886151-3bc2b944b718?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxiZWFnbGV8ZW58MHx8fHwxNzY4MjA3MTQ5fDA&ixlib=rb-4.1.0&q=80&w=1080'
       },
     ],
   },
   {
     email: 'ps@gmail.com',
+    password: 'password',
     firstName: 'Priya',
     lastName: 'Sharma',
     userName: 'priya_and_kiwi',
@@ -122,7 +127,7 @@ const DUMMY_USERS = [
         breed: 'Parakeet',
         age: '1 year',
         bio: 'Chirp chirp! I love millet seeds and shiny things.',
-        imageUrl: 'https://picsum.photos/seed/kiwi/400/400'
+        imageUrl: 'https://images.unsplash.com/photo-1544393669-d64f699044d1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwYXJha2VldHxlbnwwfHx8fDE3NjgyMDcxNTB8MA&ixlib=rb-4.1.0&q=80&w=1080'
       },
     ],
   },
@@ -130,7 +135,7 @@ const DUMMY_USERS = [
 
 async function clearCollection(collectionPath: string) {
     const collectionRef = firestore.collection(collectionPath);
-    const snapshot = await collectionRef.get();
+    const snapshot = await collectionRef.limit(500).get();
 
     if (snapshot.empty) {
         console.log(`Collection '${collectionPath}' is already empty.`);
@@ -144,7 +149,13 @@ async function clearCollection(collectionPath: string) {
     });
 
     await batch.commit();
-    console.log(`Successfully cleared collection '${collectionPath}'.`);
+
+    // Recurse if there are more documents to delete
+    if (snapshot.size === 500) {
+        await clearCollection(collectionPath);
+    } else {
+        console.log(`Successfully cleared collection '${collectionPath}'.`);
+    }
 }
 
 
@@ -154,6 +165,15 @@ async function seedDatabase() {
   // Clean up existing data, but not users
   await clearCollection('pets');
   await clearCollection('posts');
+  await clearCollection('conversations');
+
+  const postsCollection = firestore.collection('posts');
+  // Clear subcollections of posts
+   const postsSnapshot = await postsCollection.get();
+   for (const postDoc of postsSnapshot.docs) {
+     await clearCollection(`posts/${postDoc.id}/comments`);
+   }
+  
   console.log('Cleanup complete. Starting to seed new data...');
 
   const createdUserIds: { [key: string]: string } = {};
@@ -214,12 +234,12 @@ async function seedDatabase() {
 
   // --- Seed Posts ---
   console.log('Seeding posts...');
-  const postsCollection = firestore.collection('posts');
+  
   const DUMMY_POSTS = [
     {
       authorUserName: 'sara_paws',
       content: 'Beautiful day for a hike with Max! He absolutely loves the mountains.',
-      imageUrl: 'https://picsum.photos/seed/hike_day/600/600',
+      imageUrl: 'https://images.unsplash.com/photo-1505628346881-b72b27e84530?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxkb2clMjBoaWtpbmd8ZW58MHx8fHwxNzY4MzA0MDUyfDA&ixlib=rb-4.1.0&q=80&w=1080',
       createdAt: Timestamp.now(),
       likes: [],
       commentCount: 0,
@@ -227,7 +247,7 @@ async function seedDatabase() {
     {
       authorUserName: 'arjun_and_luna',
       content: 'I think Luna is plotting world domination from her cardboard box. Should I be worried? 😂',
-      imageUrl: 'https://picsum.photos/seed/luna_box/600/600',
+      imageUrl: 'https://images.unsplash.com/photo-1574158622682-e40e69841006?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxjYXQlMjBpbiUyMGJveHxlbnwwfHx8fDE3NjgzMDQwNTR8MA&ixlib=rb-4.1.0&q=80&w=1080',
       createdAt: Timestamp.fromMillis(Timestamp.now().toMillis() - 3600000), // 1 hour ago
       likes: [createdUserIds['sara_paws']],
       commentCount: 0,
@@ -235,7 +255,7 @@ async function seedDatabase() {
     {
       authorUserName: 'chen_walks_dogs',
       content: 'Rocky and Apollo enjoying some puppuccinos after a long walk in the park.',
-      imageUrl: 'https://picsum.photos/seed/puppuccino/600/600',
+      imageUrl: 'https://images.unsplash.com/photo-1541364983171-a8ba01e95cfc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkb2dzJTIwZWF0aW5nJTIwaWNlJTIwY3JlYW18ZW58MHx8fHwxNzY4MzA0MDU0fDA&ixlib=rb-4.1.0&q=80&w=1080',
       createdAt: Timestamp.fromMillis(Timestamp.now().toMillis() - 86400000), // 1 day ago
       likes: [createdUserIds['arjun_and_luna'], createdUserIds['priya_and_kiwi']],
       commentCount: 0,
@@ -243,6 +263,7 @@ async function seedDatabase() {
     {
       authorUserName: 'priya_and_kiwi',
       content: 'Kiwi learned a new trick today! So proud of my little feathered genius.',
+      imageUrl: 'https://images.unsplash.com/photo-1452570053594-1b985d6ea890?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwYXJha2VldCUyMG9uJTIwcGVyY2h8ZW58MHx8fHwxNzY4MzA0MDU1fDA&ixlib=rb-4.1.0&q=80&w=1080',
       createdAt: Timestamp.fromMillis(Timestamp.now().toMillis() - 172800000), // 2 days ago
       likes: [],
       commentCount: 0,
@@ -272,3 +293,5 @@ async function seedDatabase() {
 seedDatabase().catch((error) => {
   console.error('An unexpected error occurred during seeding:', error);
 });
+
+    
