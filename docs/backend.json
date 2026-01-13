@@ -248,6 +248,37 @@
         "attendees": { "type": "array", "items": { "type": "string" }, "description": "An array of user UIDs who are attending the event." }
       },
       "required": ["id", "title", "location", "petType", "date", "authorId"]
+    },
+    "AdvicePost": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdvicePost",
+      "type": "object",
+      "description": "Represents a post in the 'Tips and Advice' section.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the advice post." },
+        "authorId": { "type": "string", "description": "The UID of the user who created the post." },
+        "title": { "type": "string", "description": "The title or question of the post." },
+        "content": { "type": "string", "description": "The detailed content of the post." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the post was created." },
+        "upvotes": { "type": "array", "items": { "type": "string" }, "description": "Array of user UIDs who upvoted." },
+        "downvotes": { "type": "array", "items": { "type": "string" }, "description": "Array of user UIDs who downvoted." },
+        "commentCount": { "type": "number", "description": "The number of comments on the post." }
+      },
+      "required": ["id", "authorId", "title", "createdAt"]
+    },
+    "AdviceComment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdviceComment",
+      "type": "object",
+      "description": "Represents a comment on an advice post.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the comment." },
+        "authorId": { "type": "string", "description": "The UID of the user who wrote the comment." },
+        "advicePostId": { "type": "string", "description": "The ID of the advice post this comment belongs to." },
+        "content": { "type": "string", "description": "The text content of the comment." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the comment was created." }
+      },
+      "required": ["id", "authorId", "advicePostId", "content", "createdAt"]
     }
   },
   "auth": {
@@ -326,8 +357,29 @@
           "description": "Stores all community events.",
           "params": [{ "name": "eventId", "description": "The unique ID of the event." }]
         }
+      },
+      {
+        "path": "advicePosts/{advicePostId}",
+        "definition": {
+          "entityName": "AdvicePost",
+          "schema": { "$ref": "#/backend/entities/AdvicePost" },
+          "description": "Stores all community advice posts.",
+          "params": [{ "name": "advicePostId", "description": "The unique ID of the advice post." }]
+        }
+      },
+      {
+        "path": "advicePosts/{advicePostId}/comments/{commentId}",
+        "definition": {
+          "entityName": "AdviceComment",
+          "schema": { "$ref": "#/backend/entities/AdviceComment" },
+          "description": "Stores comments for a specific advice post.",
+          "params": [
+            { "name": "advicePostId", "description": "The unique ID of the advice post." },
+            { "name": "commentId", "description": "The unique ID of the comment." }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed for a social media application for pets. It includes top-level collections for users, pets, posts, events, and conversations to allow for scalable queries. Comments and messages are stored as subcollections within their respective parent documents (posts and conversations) to maintain a logical hierarchy and enable efficient retrieval. Denormalized data in conversations (participantDetails) is used to avoid extra lookups when displaying conversation lists."
+    "reasoning": "The Firestore structure is designed for a social media application for pets. It includes top-level collections for users, pets, posts, events, conversations, and advice posts to allow for scalable queries. Comments and messages are stored as subcollections within their respective parent documents (posts, conversations, advice posts) to maintain a logical hierarchy and enable efficient retrieval. Denormalized data in conversations (participantDetails) is used to avoid extra lookups when displaying conversation lists."
   }
 }
