@@ -18,7 +18,9 @@ export type GetInstantAdviceInput = z.infer<typeof GetInstantAdviceInputSchema>;
 export const GetInstantAdviceOutputSchema = z.object({
   advice: z.string().describe("The AI's response to the user's question."),
 });
-export type GetInstantAdviceOutput = z.infer<typeof GetInstantAdviceOutputSchema>;
+export type GetInstantAdviceOutput = z.infer<
+  typeof GetInstantAdviceOutputSchema
+>;
 
 export async function getInstantAdvice(
   input: GetInstantAdviceInput
@@ -32,6 +34,6 @@ export async function getInstantAdvice(
 
              Please answer the following question from the user: ${input.question}`,
   });
-  
+
   return { advice: text };
 }
