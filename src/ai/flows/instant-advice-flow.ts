@@ -10,28 +10,36 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-const GetInstantAdviceInputSchema = z.object({
-  question: z.string().describe('The question the user is asking.'),
+export const GetInstantAdviceInputSchema = z.object({
+  question: z.string().describe("The user's question about their pet."),
 });
 export type GetInstantAdviceInput = z.infer<typeof GetInstantAdviceInputSchema>;
 
-const GetInstantAdviceOutputSchema = z.string().describe("The AI's response to the user's question.");
+export const GetInstantAdviceOutputSchema = z.object({
+  advice: z.string().describe("The AI's response to the user's question."),
+});
 export type GetInstantAdviceOutput = z.infer<typeof GetInstantAdviceOutputSchema>;
 
-// This is the main function the client will call.
 export async function getInstantAdvice(
   input: GetInstantAdviceInput
 ): Promise<GetInstantAdviceOutput> {
-  const llmResponse = await instantAdviceFlow(input);
-  
-  if (!llmResponse) {
-    throw new Error('The AI did not return a response.');
-  }
-
-  return llmResponse;
+  const result = await instantAdviceFlow(input);
+  return result;
 }
 
-// Define the Genkit flow. This will be a simple wrapper around the AI model call.
+const instantAdvicePrompt = ai.definePrompt({
+  name: 'instantAdvicePrompt',
+  input: { schema: GetInstantAdviceInputSchema },
+  output: { schema: GetInstantAdviceOutputSchema },
+  prompt: `You are a friendly and knowledgeable pet care expert for the PetConnect app.
+           Your goal is to provide helpful, safe, and encouraging advice to pet owners.
+           Always prioritize the pet's safety and well-being.
+           If a situation sounds urgent or serious, strongly advise the user to contact a veterinarian immediately.
+           Do not provide medical diagnoses.
+
+           Please answer the following question from the user: {{{question}}}`,
+});
+
 const instantAdviceFlow = ai.defineFlow(
   {
     name: 'instantAdviceFlow',
@@ -39,17 +47,10 @@ const instantAdviceFlow = ai.defineFlow(
     outputSchema: GetInstantAdviceOutputSchema,
   },
   async (input) => {
-    // Generate a response using the configured model and a clear prompt.
-    const { text } = await ai.generate({
-      prompt: `You are a friendly and knowledgeable pet care expert for the PetConnect app. 
-               Your goal is to provide helpful, safe, and encouraging advice to pet owners.
-               Always prioritize the pet's safety and well-being. 
-               If a situation sounds urgent or serious, strongly advise the user to contact a veterinarian immediately. 
-               Do not provide medical diagnoses.
-               
-               Please answer the following question from the user: "${input.question}"`,
-    });
-
-    return text;
+    const { output } = await instantAdvicePrompt(input);
+    if (!output) {
+      throw new Error('The AI did not return a response.');
+    }
+    return output;
   }
 );

@@ -54,7 +54,7 @@ const MainNav = ({ userProfile }: { userProfile: any }) => {
     { href: '/tips', label: 'Tips & Advice', icon: Lightbulb },
     { href: '/breed-identifier', label: 'Identifier', icon: Scan },
     { href: '/messages', label: 'Messages', icon: MessageSquare },
-    { href: '/ai-chat', label: 'AI Chat', icon: BrainCircuit },
+    { href: '/advice', label: 'AI Chat', icon: BrainCircuit },
     { href: '/profile', label: 'Profile', icon: User },
   ];
 

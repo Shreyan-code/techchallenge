@@ -62,14 +62,15 @@ export function AdviceClient() {
     }
 
     setMessages((prev) => [...prev, userMessage, loadingMessage]);
+    const currentInput = input;
     setInput('');
     
     try {
-        const advice = await getInstantAdvice({ question: input });
+        const result = await getInstantAdvice({ question: currentInput });
         const assistantMessage: Message = {
             id: crypto.randomUUID(),
             role: 'assistant',
-            content: advice,
+            content: result.advice,
         };
         // Replace the loading message with the actual response
         setMessages((prev) => [...prev.slice(0, -1), assistantMessage]);

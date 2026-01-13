@@ -1,166 +1,202 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useUser } from '@/firebase';
-import { getInstantAdvice } from '@/ai/flows/instant-advice-flow';
+import { usePathname, useRouter } from 'next/navigation';
+import { type ReactNode, useEffect } from 'react';
+import Link from 'next/link';
+import {
+  LayoutGrid,
+  MessageSquare,
+  Scan,
+  User,
+  PawPrint,
+  Loader2,
+  LogOut,
+  PlusSquare,
+  BrainCircuit,
+  Compass,
+  CalendarDays,
+  Lightbulb,
+} from 'lucide-react';
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarHeader,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarInset,
+  SidebarTrigger,
+  SidebarFooter,
+} from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Send, BrainCircuit } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useDoc, useMemoFirebase, useAuth } from '@/firebase';
 import { doc, getFirestore } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  isLoading?: boolean;
-}
+const MainNav = ({ userProfile }: { userProfile: any }) => {
+  const pathname = usePathname();
+  const hasLocation = userProfile?.city && userProfile?.state;
 
-export function AdviceClient() {
-  const { user } = useUser();
+  const menuItems = [
+    { href: '/', label: 'Feed', icon: LayoutGrid },
+    { href: '/create-post', label: 'Create Post', icon: PlusSquare },
+    {
+      href: '/find',
+      label: 'Find',
+      icon: Compass,
+      disabled: !hasLocation,
+      tooltip: 'Add your location in your profile to find pet parents.',
+    },
+    { href: '/events', label: 'Events', icon: CalendarDays },
+    { href: '/tips', label: 'Tips & Advice', icon: Lightbulb },
+    { href: '/breed-identifier', label: 'Identifier', icon: Scan },
+    { href: '/messages', label: 'Messages', icon: MessageSquare },
+    { href: '/advice', label: 'AI Chat', icon: BrainCircuit },
+    { href: '/profile', label: 'Profile', icon: User },
+  ];
+
+  return (
+    <SidebarMenu>
+      {menuItems.map((item) => (
+        <SidebarMenuItem key={item.label}>
+          <Tooltip>
+            <TooltipTrigger asChild disabled={!item.disabled}>
+              <div className={cn(item.disabled && "cursor-not-allowed")}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === item.href}
+                  className="justify-start"
+                  disabled={item.disabled}
+                  tooltip={{ children: item.label, side: 'right' }}
+                >
+                  <Link href={item.href}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </div>
+            </TooltipTrigger>
+            {item.disabled && item.tooltip && (
+              <TooltipContent side="right" className="ml-2">
+                <p>{item.tooltip}</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
+  );
+};
+
+export function AppLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
   const firestore = getFirestore();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  
+
   const userProfileRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
     [user, firestore]
   );
-  const { data: userProfile } = useDoc(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+
+  const isAuthPage = pathname === '/login' || pathname === '/signup';
+  const isOnboardingPage = pathname === '/onboarding';
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-        const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-        if (viewport) {
-            viewport.scrollTop = viewport.scrollHeight;
-        }
-    }
-  }, [messages]);
+    const isLoading = isUserLoading || (user && isProfileLoading);
+    if (isLoading) return;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || !user || isSubmitting) return;
-
-    setIsSubmitting(true);
-
-    const userMessage: Message = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      content: input,
-    };
-
-    const loadingMessage: Message = {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: 'Thinking...',
-        isLoading: true
+    if (!user && !isAuthPage) {
+      router.push('/login');
     }
 
-    setMessages((prev) => [...prev, userMessage, loadingMessage]);
-    setInput('');
-    
-    try {
-        const advice = await getInstantAdvice({ question: input });
-        const assistantMessage: Message = {
-            id: crypto.randomUUID(),
-            role: 'assistant',
-            content: advice,
-        };
-        // Replace the loading message with the actual response
-        setMessages((prev) => [...prev.slice(0, -1), assistantMessage]);
-    } catch (error) {
-        console.error('Error fetching advice:', error);
-        const errorMessage: Message = {
-            id: crypto.randomUUID(),
-            role: 'assistant',
-            content: "Sorry, I ran into an issue. Please try again.",
-        };
-        setMessages((prev) => [...prev.slice(0, -1), errorMessage]);
-    } finally {
-      setIsSubmitting(false);
+    if (user) {
+      if (isAuthPage) {
+        router.push('/');
+      } else if (userProfile && !userProfile.onboardingCompleted && !isOnboardingPage) {
+        router.push('/onboarding');
+      } else if (userProfile && userProfile.onboardingCompleted && isOnboardingPage) {
+        router.push('/');
+      }
     }
+  }, [user, userProfile, isUserLoading, isProfileLoading, isAuthPage, isOnboardingPage, router]);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/login');
   };
 
-  return (
-    <div className="flex flex-col h-[calc(100vh-12rem)] border rounded-lg">
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-        <div className="space-y-6">
-          {messages.length === 0 ? (
-            <div className="text-center text-muted-foreground pt-10">
-              <BrainCircuit className="mx-auto h-12 w-12" />
-              <p className="mt-2">Ask me anything about your pets!</p>
-               <p className="text-sm">e.g., "Why does my dog eat grass?" or "How can I train my cat?"</p>
-            </div>
-          ) : (
-            messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={cn(
-                  'flex items-start gap-4',
-                  msg.role === 'user' ? 'justify-end' : 'justify-start'
-                )}
-              >
-                {msg.role === 'assistant' && (
-                  <Avatar className="h-8 w-8 border">
-                    <AvatarFallback><BrainCircuit className="h-4 w-4"/></AvatarFallback>
-                  </Avatar>
-                )}
-                <div
-                  className={cn(
-                    'max-w-lg rounded-lg px-4 py-2',
-                    msg.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted'
-                  )}
-                >
-                  {msg.isLoading ? (
-                      <div className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin"/>
-                          <span>Thinking...</span>
-                      </div>
-                  ) : (
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                  )}
-                </div>
-                 {msg.role === 'user' && (
-                  <Avatar className="h-8 w-8">
-                     <AvatarImage src={userProfile?.profilePicture || user?.photoURL || undefined} alt="You" />
-                     <AvatarFallback>{userProfile?.userName?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
-                  </Avatar>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </ScrollArea>
-      <div className="p-4 border-t bg-background">
-        <form className="relative" onSubmit={handleSubmit}>
-          <Input
-            placeholder="Ask for pet advice..."
-            className="pr-12"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={isSubmitting}
-          />
-          <Button
-            type="submit"
-            size="icon"
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
-            disabled={!input.trim() || isSubmitting}
-          >
-            {isSubmitting ? (
-                <Loader2 className="h-4 w-4 animate-spin"/>
-            ) : (
-                <Send className="h-4 w-4" />
-            )}
-          </Button>
-        </form>
+  const isLoading = isUserLoading || (user && isProfileLoading);
+
+  if (isLoading && !isAuthPage) {
+     return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
-    </div>
+    );
+  }
+  
+  if (isAuthPage || isOnboardingPage || !user) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+        {children}
+      </main>
+    );
+  }
+
+  return (
+    <SidebarProvider>
+      <Sidebar>
+        <SidebarHeader>
+          <div className="flex items-center gap-2 p-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 shrink-0"
+              asChild
+            >
+              <Link href="/">
+                <PawPrint className="text-primary" />
+              </Link>
+            </Button>
+            <h1 className="text-xl font-headline font-semibold text-primary group-data-[collapsible=icon]:hidden">
+              PetConnect
+            </h1>
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <MainNav userProfile={userProfile} />
+        </SidebarContent>
+         <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={handleLogout}
+                className="justify-start"
+                tooltip={{ children: "Logout", side: 'right' }}
+              >
+                <LogOut />
+                <span>Logout</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset>
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 md:hidden">
+          <Link href="/" className="flex items-center gap-2 font-semibold">
+            <PawPrint className="h-6 w-6 text-primary" />
+            <span className="font-headline text-lg">PetConnect</span>
+          </Link>
+          <SidebarTrigger />
+        </header>
+        <div className="p-4 sm:p-6">{children}</div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
