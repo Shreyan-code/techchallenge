@@ -23,34 +23,15 @@ export type GetInstantAdviceOutput = z.infer<typeof GetInstantAdviceOutputSchema
 export async function getInstantAdvice(
   input: GetInstantAdviceInput
 ): Promise<GetInstantAdviceOutput> {
-  const result = await instantAdviceFlow(input);
-  return result;
+  const { text } = await ai.generate({
+    prompt: `You are a friendly and knowledgeable pet care expert for the PetConnect app.
+             Your goal is to provide helpful, safe, and encouraging advice to pet owners.
+             Always prioritize the pet's safety and well-being.
+             If a situation sounds urgent or serious, strongly advise the user to contact a veterinarian immediately.
+             Do not provide medical diagnoses.
+
+             Please answer the following question from the user: ${input.question}`,
+  });
+  
+  return { advice: text };
 }
-
-const instantAdvicePrompt = ai.definePrompt({
-  name: 'instantAdvicePrompt',
-  input: { schema: GetInstantAdviceInputSchema },
-  output: { schema: GetInstantAdviceOutputSchema },
-  prompt: `You are a friendly and knowledgeable pet care expert for the PetConnect app.
-           Your goal is to provide helpful, safe, and encouraging advice to pet owners.
-           Always prioritize the pet's safety and well-being.
-           If a situation sounds urgent or serious, strongly advise the user to contact a veterinarian immediately.
-           Do not provide medical diagnoses.
-
-           Please answer the following question from the user: {{{question}}}`,
-});
-
-const instantAdviceFlow = ai.defineFlow(
-  {
-    name: 'instantAdviceFlow',
-    inputSchema: GetInstantAdviceInputSchema,
-    outputSchema: GetInstantAdviceOutputSchema,
-  },
-  async (input) => {
-    const { output } = await instantAdvicePrompt(input);
-    if (!output) {
-      throw new Error('The AI did not return a response.');
-    }
-    return output;
-  }
-);
