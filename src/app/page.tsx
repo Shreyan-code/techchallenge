@@ -121,12 +121,13 @@ function PostCard({ post }: { post: any }) {
 
 
 export default function SocialFeedPage() {
+  const { user } = useUser();
   const firestore = useFirestore();
 
   // Memoize the query to fetch posts, ordered by creation date
   const postsQuery = useMemoFirebase(
-    () => query(collection(firestore, 'posts'), orderBy('createdAt', 'desc')),
-    [firestore]
+    () => (user ? query(collection(firestore, 'posts'), orderBy('createdAt', 'desc')) : null),
+    [firestore, user]
   );
   
   // Fetch the posts collection
@@ -148,5 +149,3 @@ export default function SocialFeedPage() {
     </div>
   );
 }
-
-    
