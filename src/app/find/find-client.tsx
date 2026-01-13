@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where, getDocs, and } from 'firebase/firestore';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -41,15 +41,9 @@ export function FindClient() {
     setResults([]);
 
     try {
-      // In a real app, you would add geo-query capabilities.
-      // For this demo, we'll just filter by users who have location data.
       const usersRef = collection(firestore, 'users');
       const q = query(
         usersRef,
-        // This is a simplification. A real implementation would need geoqueries
-        // which are complex. We will filter for users that have a state value
-        // and have chosen to be discoverable.
-        where('state', '!=', null),
         where('discoverable', '==', true)
       );
 
@@ -68,7 +62,7 @@ export function FindClient() {
       for (const user of foundUsers) {
         if (user.petIds && user.petIds.length > 0) {
           const petsRef = collection(firestore, 'pets');
-          const petsQuery = query(petsRef, where('id', 'in', user.petIds));
+          const petsQuery = query(petsRef, where('__name__', 'in', user.petIds));
           petPromises.push(getDocs(petsQuery).then(petSnap => {
             user.pets = petSnap.docs.map(d => d.data());
           }));
@@ -85,13 +79,11 @@ export function FindClient() {
           finalResults = foundUsers.filter(user => {
               if (!user.pets || user.pets.length === 0) return false;
 
-              const hasMatchingPet = user.pets.some((pet: any) => {
+              return user.pets.some((pet: any) => {
                   const typeMatch = petType === 'all' || pet.breed.toLowerCase().includes(petType.toLowerCase()); // Simple check for now
                   const breedMatch = breed.trim() === '' || pet.breed.toLowerCase().includes(breed.trim().toLowerCase());
                   return typeMatch && breedMatch;
               });
-
-              return hasMatchingPet;
           })
       }
 
