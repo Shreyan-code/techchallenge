@@ -133,13 +133,6 @@ async function seedDatabase() {
   const usersCollection = firestore.collection('users');
   const petsCollection = firestore.collection('pets');
   
-  // Check if users already exist
-  const existingUsersSnap = await usersCollection.limit(1).get();
-  if (!existingUsersSnap.empty) {
-      console.warn('Users collection is not empty. Skipping seed to avoid duplicates.');
-      return;
-  }
-
   for (const userData of DUMMY_USERS) {
     try {
       console.log(`Creating user profile: ${userData.email}`);
