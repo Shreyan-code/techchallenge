@@ -7,7 +7,7 @@ import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, writeBatch } from 'firebase/firestore';
+import { doc, writeBatch, collection } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import {
   Card,
