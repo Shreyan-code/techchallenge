@@ -17,17 +17,13 @@ function ConversationList({ onSelectConversation, activeConversationId }: { onSe
   const conversationsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(
-      collection(firestore, 'conversations'), 
-      orderBy('lastMessageTimestamp', 'desc'),
+      collection(firestore, 'conversations'),
+      where('participants', 'array-contains', user.uid),
+      orderBy('lastMessageTimestamp', 'desc')
     );
   }, [user, firestore]);
   
   const { data: conversations, isLoading } = useCollection(conversationsQuery);
-  
-  const filteredConversations = useMemo(() => {
-      if (!conversations || !user) return [];
-      return conversations.filter(convo => convo.participants.includes(user.uid));
-  }, [conversations, user]);
 
 
   const getOtherParticipant = (convo: any) => {
@@ -39,14 +35,14 @@ function ConversationList({ onSelectConversation, activeConversationId }: { onSe
     return <div className="p-4"><Loader2 className="animate-spin" /></div>;
   }
   
-  if (!filteredConversations || filteredConversations.length === 0) {
+  if (!conversations || conversations.length === 0) {
     return <div className="p-4 text-center text-sm text-muted-foreground">No conversations yet.</div>
   }
 
   return (
     <ScrollArea className="flex-1">
       <div className="p-2">
-        {filteredConversations.map((convo) => {
+        {conversations.map((convo) => {
           const otherParticipant = getOtherParticipant(convo);
           if (!otherParticipant) return null;
           
