@@ -23,14 +23,18 @@ export type GetInstantAdviceOutput = z.infer<typeof GetInstantAdviceOutputSchema
 export async function getInstantAdvice(
   input: GetInstantAdviceInput
 ): Promise<GetInstantAdviceOutput> {
+  // Validate input
+  const validatedInput = GetInstantAdviceInputSchema.parse(input);
+
   const { text } = await ai.generate({
+    model: 'gemini-2.5-flash',
     prompt: `You are a friendly and knowledgeable pet care expert for the PetConnect app.
              Your goal is to provide helpful, safe, and encouraging advice to pet owners.
              Always prioritize the pet's safety and well-being.
              If a situation sounds urgent or serious, strongly advise the user to contact a veterinarian immediately.
              Do not provide medical diagnoses.
 
-             Please answer the following question from the user: ${input.question}`,
+             Please answer the following question from the user: ${validatedInput.question}`,
   });
   
   return { advice: text };
