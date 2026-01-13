@@ -30,27 +30,32 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
+    const onError = (error: any) => {
+        console.error('Login Error:', error);
+        let description = 'An unexpected error occurred.';
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+            description = 'Invalid email or password. Please try again.';
+        }
+        toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: description,
+        });
+        setIsLoading(false);
+    };
+
     try {
-      // We are not awaiting here to avoid blocking UI
-      initiateEmailSignIn(auth, email, password);
-      // The onAuthStateChanged listener in FirebaseProvider will handle the redirect
-      // For now, we can optimistically assume it might work, or rely on the listener fully
-      // To give feedback, we can wait for a bit and then check auth state or just show a message.
-      // A more robust solution would use a global state listener that updates based on auth events.
+      initiateEmailSignIn(auth, email, password, onError);
+      
       toast({
         title: 'Logging in...',
         description: 'You will be redirected shortly.',
       });
       // The redirect is handled in AppLayout.tsx based on user state
     } catch (error: any) {
-      console.error('Login Error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Login Failed',
-        description:
-          error.message || 'Invalid email or password. Please try again.',
-      });
-      setIsLoading(false);
+        // This catch block is for synchronous errors during the initiation call itself,
+        // which is less likely but good to have.
+        onError(error);
     }
   };
 
