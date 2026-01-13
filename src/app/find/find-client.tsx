@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where, getDocs, and } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -27,7 +27,8 @@ const PetTypeIcons = {
 };
 
 export function FindClient() {
-  const [distance, setDistance] = useState([25]);
+  const { user: currentUser } = useUser();
+  const [distance, setDistance] = useState([40]);
   const [petType, setPetType] = useState('all');
   const [breed, setBreed] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -46,8 +47,10 @@ export function FindClient() {
       const q = query(
         usersRef,
         // This is a simplification. A real implementation would need geoqueries
-        // which are complex. We will filter for users that have a state value.
-        where('state', '!=', null)
+        // which are complex. We will filter for users that have a state value
+        // and have chosen to be discoverable.
+        where('state', '!=', null),
+        where('discoverable', '==', true)
       );
 
       const querySnapshot = await getDocs(q);
@@ -55,7 +58,10 @@ export function FindClient() {
       const petPromises: Promise<any>[] = [];
 
       querySnapshot.forEach((doc) => {
-        foundUsers.push({ id: doc.id, ...doc.data() });
+        // Exclude current user from results
+        if (doc.id !== currentUser?.uid) {
+            foundUsers.push({ id: doc.id, ...doc.data() });
+        }
       });
 
       // Fetch pets for all found users
@@ -104,11 +110,11 @@ export function FindClient() {
         <CardContent className="p-6">
           <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
             <div className="space-y-2 col-span-1 sm:col-span-2">
-              <label htmlFor="distance" className="text-sm font-medium">Distance ({distance[0]} miles)</label>
+              <label htmlFor="distance" className="text-sm font-medium">Distance ({distance[0]} km)</label>
               <Slider
                 id="distance"
                 min={1}
-                max={100}
+                max={150}
                 step={1}
                 value={distance}
                 onValueChange={setDistance}

@@ -29,6 +29,8 @@ import {
 } from '@/components/ui/form';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { identifyPetBreedFromImage } from '@/ai/flows/identify-pet-breed-from-image';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const fileToDataUri = (file: File) =>
   new Promise<string>((resolve, reject) => {
@@ -53,6 +55,7 @@ const onboardingSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   country: z.string().optional(),
+  discoverable: z.boolean(),
   pets: z.array(petSchema),
 });
 
@@ -80,6 +83,7 @@ export function OnboardingClient() {
       city: '',
       state: '',
       country: '',
+      discoverable: true,
       pets: [{ name: '', breed: '', age: '', bio: '', imageUrl: '' }],
     },
   });
@@ -174,6 +178,7 @@ export function OnboardingClient() {
         city: data.city,
         state: data.state,
         country: data.country,
+        discoverable: data.discoverable,
         onboardingCompleted: true,
         petIds: petIds
       });
@@ -306,6 +311,28 @@ export function OnboardingClient() {
                   )}
                 />
             </div>
+            <FormField
+              control={form.control}
+              name="discoverable"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">
+                      Discoverability
+                    </FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      Allow other pet parents to find your profile.
+                    </p>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
 

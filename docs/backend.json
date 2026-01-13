@@ -58,6 +58,10 @@
         "onboardingCompleted": {
           "type": "boolean",
           "description": "Whether the user has completed the onboarding process."
+        },
+        "discoverable": {
+          "type": "boolean",
+          "description": "Whether the user's profile is discoverable in search."
         }
       },
       "required": [

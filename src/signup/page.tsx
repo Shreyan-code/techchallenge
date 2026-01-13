@@ -66,6 +66,7 @@ export default function SignupPage() {
         country: '',
         petIds: [],
         onboardingCompleted: false,
+        discoverable: true,
       };
 
       const userDocRef = doc(firestore, 'users', user.uid);

@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, User as UserIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Switch } from '@/components/ui/switch';
 
 const profileSchema = z.object({
   userName: z.string().min(3, 'Username must be at least 3 characters'),
@@ -38,6 +39,7 @@ const profileSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   country: z.string().optional(),
+  discoverable: z.boolean(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -224,6 +226,28 @@ export function ProfileEditDialog({ userProfile, children }: ProfileEditDialogPr
                   )}
                 />
             </div>
+             <FormField
+              control={form.control}
+              name="discoverable"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel>
+                      Discoverability
+                    </FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      Allow others to find your profile.
+                    </p>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
             <DialogFooter>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
