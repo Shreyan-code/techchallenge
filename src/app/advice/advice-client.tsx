@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useTransition } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useUser } from '@/firebase';
 import { getInstantAdvice } from '@/ai/flows/instant-advice-flow';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  isLoading?: boolean;
 }
 
 export function AdviceClient() {
@@ -23,7 +24,7 @@ export function AdviceClient() {
   const firestore = getFirestore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   const userProfileRef = useMemoFirebase(
@@ -43,44 +44,46 @@ export function AdviceClient() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || !user) return;
+    if (!input.trim() || !user || isSubmitting) return;
+
+    setIsSubmitting(true);
 
     const userMessage: Message = {
       id: crypto.randomUUID(),
       role: 'user',
       content: input,
     };
-    setMessages((prev) => [...prev, userMessage]);
-    setInput('');
-    
-    // Add a loading indicator message from the assistant
+
     const loadingMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: "Thinking..."
+        content: 'Thinking...',
+        isLoading: true
     }
-    setMessages((prev) => [...prev, loadingMessage]);
 
-    startTransition(async () => {
-        try {
-            const advice = await getInstantAdvice({ question: input });
-            const assistantMessage: Message = {
-                id: crypto.randomUUID(),
-                role: 'assistant',
-                content: advice,
-            };
-            // Replace the loading message with the actual response
-            setMessages((prev) => [...prev.slice(0, -1), assistantMessage]);
-        } catch (error) {
-            console.error('Error fetching advice:', error);
-            const errorMessage: Message = {
-                id: crypto.randomUUID(),
-                role: 'assistant',
-                content: "Sorry, I ran into an issue. Please try again.",
-            };
-            setMessages((prev) => [...prev.slice(0, -1), errorMessage]);
-        }
-    });
+    setMessages((prev) => [...prev, userMessage, loadingMessage]);
+    setInput('');
+    
+    try {
+        const advice = await getInstantAdvice({ question: input });
+        const assistantMessage: Message = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: advice,
+        };
+        // Replace the loading message with the actual response
+        setMessages((prev) => [...prev.slice(0, -1), assistantMessage]);
+    } catch (error) {
+        console.error('Error fetching advice:', error);
+        const errorMessage: Message = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: "Sorry, I ran into an issue. Please try again.",
+        };
+        setMessages((prev) => [...prev.slice(0, -1), errorMessage]);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -115,7 +118,7 @@ export function AdviceClient() {
                       : 'bg-muted'
                   )}
                 >
-                  {msg.content === "Thinking..." ? (
+                  {msg.isLoading ? (
                       <div className="flex items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin"/>
                           <span>Thinking...</span>
@@ -142,15 +145,15 @@ export function AdviceClient() {
             className="pr-12"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            disabled={isPending}
+            disabled={isSubmitting}
           />
           <Button
             type="submit"
             size="icon"
             className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
-            disabled={!input.trim() || isPending}
+            disabled={!input.trim() || isSubmitting}
           >
-            {isPending ? (
+            {isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin"/>
             ) : (
                 <Send className="h-4 w-4" />
