@@ -174,7 +174,10 @@ async function seedDatabase() {
   await deleteAllUsers();
   await clearCollection('users');
   await clearCollection('pets');
+  await clearCollection('posts');
   console.log('Cleanup complete. Starting to seed new data...');
+
+  const createdUserIds: { [key: string]: string } = {};
 
   for (const userData of DUMMY_USERS) {
     try {
@@ -188,6 +191,7 @@ async function seedDatabase() {
       });
 
       const uid = userRecord.uid;
+      createdUserIds[userData.userName] = uid; // Store UID by username for post creation
       const petIds: string[] = [];
       
       const petsCollection = firestore.collection('pets');
@@ -227,6 +231,54 @@ async function seedDatabase() {
       console.log(`Successfully created user, profile, and pets for ${userData.email}`);
     } catch (error: any) {
       console.error(`Failed to create user ${userData.email}:`, error);
+    }
+  }
+
+  // --- Seed Posts ---
+  console.log('Seeding posts...');
+  const postsCollection = firestore.collection('posts');
+  const DUMMY_POSTS = [
+    {
+      authorId: createdUserIds['sara_paws'],
+      content: 'Beautiful day for a hike with Max! He absolutely loves the mountains.',
+      imageUrl: 'https://picsum.photos/seed/hike_day/600/600',
+      createdAt: Timestamp.now(),
+      likes: [],
+      commentCount: 0,
+    },
+    {
+      authorId: createdUserIds['arjun_and_luna'],
+      content: 'I think Luna is plotting world domination from her cardboard box. Should I be worried? 😂',
+      imageUrl: 'https://picsum.photos/seed/luna_box/600/600',
+      createdAt: Timestamp.fromMillis(Timestamp.now().toMillis() - 3600000), // 1 hour ago
+      likes: [createdUserIds['sara_paws']],
+      commentCount: 0,
+    },
+    {
+      authorId: createdUserIds['chen_walks_dogs'],
+      content: 'Rocky and Apollo enjoying some puppuccinos after a long walk in the park.',
+      imageUrl: 'https://picsum.photos/seed/puppuccino/600/600',
+      createdAt: Timestamp.fromMillis(Timestamp.now().toMillis() - 86400000), // 1 day ago
+      likes: [createdUserIds['arjun_and_luna'], createdUserIds['priya_and_kiwi']],
+      commentCount: 0,
+    },
+    {
+      authorId: createdUserIds['priya_and_kiwi'],
+      content: 'Kiwi learned a new trick today! So proud of my little feathered genius.',
+      createdAt: Timestamp.fromMillis(Timestamp.now().toMillis() - 172800000), // 2 days ago
+      likes: [],
+      commentCount: 0,
+    }
+  ];
+
+  for (const postData of DUMMY_POSTS) {
+    if (postData.authorId) {
+      const postRef = postsCollection.doc();
+      await postRef.set({
+        ...postData,
+        id: postRef.id
+      });
+      console.log(`  - Created post for user ${Object.keys(createdUserIds).find(key => createdUserIds[key] === postData.authorId)}`);
     }
   }
 
