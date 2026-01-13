@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection, Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -93,7 +93,7 @@ export default function CreateEventPage() {
         description: data.description,
         location: data.location,
         petType: data.petType,
-        date: serverTimestamp.fromMillis(combinedDateTime.getTime()),
+        date: Timestamp.fromDate(combinedDateTime),
         attendees: [],
       });
 
