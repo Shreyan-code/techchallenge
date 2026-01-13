@@ -31,7 +31,7 @@ export async function getInstantAdvice(
 const getUserPets = ai.defineTool(
     {
       name: 'getUserPets',
-      description: "Retrieves the pets owned by the current user to provide context for their questions.",
+      description: "Retrieves the pets owned by the current user to provide context for their questions. Requires the user's ID.",
       inputSchema: z.object({
         userId: z.string(),
       }),
@@ -78,7 +78,6 @@ const instantAdviceFlow = ai.defineFlow(
     name: 'instantAdviceFlow',
     inputSchema: GetInstantAdviceInputSchema,
     outputSchema: GetInstantAdviceOutputSchema,
-    tools: [getUserPets]
   },
   async ({ userId, question }) => {
 
@@ -87,7 +86,7 @@ const instantAdviceFlow = ai.defineFlow(
 
       Always prioritize the pet's safety and well-being. If a situation sounds urgent or serious, strongly advise the user to contact a veterinarian immediately. Do not provide medical diagnoses.
       
-      Use the getUserPets tool to get context about the user's pets to tailor your response.
+      To provide a personalized response, you MUST first use the getUserPets tool to get context about the user's current pets.
       
       Now, please answer the following question from the user: "${question}"
       
@@ -95,11 +94,13 @@ const instantAdviceFlow = ai.defineFlow(
       model: 'googleai/gemini-pro',
       tools: [getUserPets, {tool: 'googleSearch'}],
       toolConfig: {
-        custom: {
-            "getUserPets": {
-                userId: userId,
-            },
-        },
+        // Pass the dynamic userId to the tool when it's called
+        custom: (toolRequest) => {
+            if (toolRequest.name === 'getUserPets') {
+                return { userId };
+            }
+            return {};
+        }
       },
       config: {
         safetySettings: [
