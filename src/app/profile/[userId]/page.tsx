@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where, getDocs, writeBatch, serverTimestamp, and } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -16,12 +16,13 @@ import {
 import { Loader2, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 
-export default function UserProfilePage({ params }: { params: { userId: string } }) {
+export default function UserProfilePage() {
   const { user: currentUser, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const params = useParams();
+  const userId = params.userId as string;
 
-  const { userId } = params;
 
   const userProfileRef = useMemoFirebase(
     () => (userId ? doc(firestore, 'users', userId) : null),
