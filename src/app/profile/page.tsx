@@ -177,7 +177,12 @@ export default function ProfilePage() {
           ))
           ) : (
              <Card className="sm:col-span-2 flex flex-col items-center justify-center p-12 border-dashed">
-                <p className="text-muted-foreground">You haven't added any pets yet.</p>
+                <p className="text-muted-foreground mb-4">You haven't added any pets yet.</p>
+                 <PetDialog>
+                  <Button variant="secondary">
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Your First Pet
+                  </Button>
+                </PetDialog>
              </Card>
           )}
         </div>

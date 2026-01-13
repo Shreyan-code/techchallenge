@@ -13,9 +13,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Loader2, MessageSquare, MapPin } from 'lucide-react';
+import { Loader2, MessageSquare, MapPin, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { ProfileEditDialog } from '../ProfileEditDialog';
+import { PetDialog } from '../PetDialog';
 
 
 export default function UserProfilePage() {
@@ -141,6 +142,13 @@ export default function UserProfilePage() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold font-headline">{isOwnProfile ? "My Pets" : `${userProfile.userName}'s Pets`}</h2>
+           {isOwnProfile && (
+            <PetDialog>
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Pet
+              </Button>
+            </PetDialog>
+          )}
         </div>
         <div className="grid gap-6 sm:grid-cols-2">
           {pets && pets.length > 0 ? (
@@ -171,7 +179,14 @@ export default function UserProfilePage() {
             ))
           ) : (
             <Card className="sm:col-span-2 flex flex-col items-center justify-center p-12 border-dashed">
-              <p className="text-muted-foreground">{userProfile.userName} hasn't added any pets yet.</p>
+              <p className="text-muted-foreground mb-4">{isOwnProfile ? "You haven't added any pets yet." : `${userProfile.userName} hasn't added any pets yet.`}</p>
+              {isOwnProfile && (
+                 <PetDialog>
+                  <Button variant="secondary">
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Your First Pet
+                  </Button>
+                </PetDialog>
+              )}
             </Card>
           )}
         </div>
