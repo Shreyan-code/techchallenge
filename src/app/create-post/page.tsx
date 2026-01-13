@@ -33,6 +33,7 @@ function CreatePostClient() {
     
     const repostContent = searchParams.get('repostContent');
     const repostAuthor = searchParams.get('repostAuthor');
+    const repostImageUrl = searchParams.get('repostImageUrl');
     
     const [content, setContent] = useState('');
     const [imageFile, setImageFile] = useState<File | null>(null);
@@ -44,7 +45,10 @@ function CreatePostClient() {
         if (repostContent && repostAuthor) {
             setContent(`Reposting from @${repostAuthor}:\n\n"${repostContent}"`);
         }
-    }, [repostContent, repostAuthor]);
+        if (repostImageUrl) {
+            setImagePreview(repostImageUrl);
+        }
+    }, [repostContent, repostAuthor, repostImageUrl]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -65,7 +69,7 @@ function CreatePostClient() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || (!content.trim() && !imageFile)) {
+    if (!user || (!content.trim() && !imageFile && !imagePreview)) {
       toast({
         variant: 'destructive',
         title: 'Empty Post',
@@ -76,10 +80,8 @@ function CreatePostClient() {
     setIsSubmitting(true);
 
     try {
-      let imageUrl: string | undefined = undefined;
+      let imageUrl: string | undefined = imagePreview || undefined;
       if (imageFile) {
-        // In a real app, you'd upload this to a service like Firebase Storage
-        // and get a URL. For simplicity, we'll store it as a data URI.
         imageUrl = await fileToDataUri(imageFile);
       }
       

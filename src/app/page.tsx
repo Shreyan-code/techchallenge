@@ -49,7 +49,10 @@ function PostCard({ post }: { post: any }) {
 
   const handleRepost = () => {
     if (!author) return;
-    const url = `/create-post?repostContent=${encodeURIComponent(post.content)}&repostAuthor=${encodeURIComponent(author.userName)}`;
+    let url = `/create-post?repostContent=${encodeURIComponent(post.content)}&repostAuthor=${encodeURIComponent(author.userName)}`;
+    if (post.imageUrl) {
+      url += `&repostImageUrl=${encodeURIComponent(post.imageUrl)}`;
+    }
     router.push(url);
   };
 
@@ -148,7 +151,7 @@ export default function SocialFeedPage() {
   // Fetch the posts collection
   const { data: posts, isLoading } = useCollection(postsQuery);
 
-  if (!user) {
+  if (isLoading) {
     return (
       <div className="flex justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -159,7 +162,7 @@ export default function SocialFeedPage() {
   return (
     <div className="w-full max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold font-headline mb-6">Feed</h1>
-      {isLoading && (
+      {isLoading && posts === null && (
         <div className="flex justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
