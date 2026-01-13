@@ -238,7 +238,7 @@ async function seedDatabase() {
   const DUMMY_POSTS = [
     {
       authorUserName: 'sara_paws',
-      content: 'Beautiful day for a hike with Max! He absolutely loves the mountains.',
+      content: 'Just a perfect day out with my best friend.',
       imageUrl: 'https://images.unsplash.com/photo-1505628346881-b72b27e84530?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxkb2clMjBoaWtpbmd8ZW58MHx8fHwxNzY4MzA0MDUyfDA&ixlib=rb-4.1.0&q=80&w=1080',
       createdAt: Timestamp.now(),
       likes: [],
@@ -246,7 +246,7 @@ async function seedDatabase() {
     },
     {
       authorUserName: 'arjun_and_luna',
-      content: 'I think Luna is plotting world domination from her cardboard box. Should I be worried? 😂',
+      content: 'If it fits, I sits. The universal cat motto.',
       imageUrl: 'https://images.unsplash.com/photo-1574158622682-e40e69841006?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxjYXQlMjBpbiUyMGJveHxlbnwwfHx8fDE3NjgzMDQwNTR8MA&ixlib=rb-4.1.0&q=80&w=1080',
       createdAt: Timestamp.fromMillis(Timestamp.now().toMillis() - 3600000), // 1 hour ago
       likes: [createdUserIds['sara_paws']],
@@ -254,7 +254,7 @@ async function seedDatabase() {
     },
     {
       authorUserName: 'chen_walks_dogs',
-      content: 'Rocky and Apollo enjoying some puppuccinos after a long walk in the park.',
+      content: 'A well-deserved treat for these two after a big day of exploring.',
       imageUrl: 'https://images.unsplash.com/photo-1541364983171-a8ba01e95cfc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkb2dzJTIwZWF0aW5nJTIwaWNlJTIwY3JlYW18ZW58MHx8fHwxNzY4MzA0MDU0fDA&ixlib=rb-4.1.0&q=80&w=1080',
       createdAt: Timestamp.fromMillis(Timestamp.now().toMillis() - 86400000), // 1 day ago
       likes: [createdUserIds['arjun_and_luna'], createdUserIds['priya_and_kiwi']],
@@ -262,7 +262,7 @@ async function seedDatabase() {
     },
     {
       authorUserName: 'priya_and_kiwi',
-      content: 'Kiwi learned a new trick today! So proud of my little feathered genius.',
+      content: 'Such a clever little one! Soaking up the sun.',
       imageUrl: 'https://images.unsplash.com/photo-1452570053594-1b985d6ea890?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwYXJha2VldCUyMG9uJTIwcGVyY2h8ZW58MHx8fHwxNzY4MzA0MDU1fDA&ixlib=rb-4.1.0&q=80&w=1080',
       createdAt: Timestamp.fromMillis(Timestamp.now().toMillis() - 172800000), // 2 days ago
       likes: [],
