@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Siren, X } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { formatDistanceToNow } from 'date-fns';
+import { useMemo } from 'react';
 
 export function LostPetAlertBanner() {
     const { user } = useUser();
@@ -15,10 +16,16 @@ export function LostPetAlertBanner() {
     const router = useRouter();
 
     const alertsQuery = useMemoFirebase(
-        () => query(collection(firestore, 'lostPetAlerts'), where('status', '==', 'active'), orderBy('createdAt', 'desc')),
+        () => query(collection(firestore, 'lostPetAlerts'), where('status', '==', 'active')),
         [firestore]
     );
     const { data: alerts } = useCollection(alertsQuery);
+    
+    const sortedAlerts = useMemo(() => {
+        if (!alerts) return [];
+        return [...alerts].sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+    }, [alerts]);
+
 
     const handleStartConversation = async (ownerId: string) => {
         if (!user || ownerId === user.uid) return;
@@ -67,7 +74,7 @@ export function LostPetAlertBanner() {
         updateDocumentNonBlocking(alertRef, { status: 'resolved' });
     }
 
-    if (!alerts || alerts.length === 0) {
+    if (!sortedAlerts || sortedAlerts.length === 0) {
         return null;
     }
 
@@ -75,7 +82,7 @@ export function LostPetAlertBanner() {
         <div className="w-full border-b border-destructive/50 bg-destructive/10">
             <Carousel opts={{ loop: true, }} className="w-full max-w-5xl mx-auto">
                 <CarouselContent>
-                    {alerts.map(alert => (
+                    {sortedAlerts.map(alert => (
                         <CarouselItem key={alert.id}>
                             <div className="p-1">
                                 <Alert variant="destructive" className="border-none bg-transparent">
@@ -106,7 +113,7 @@ export function LostPetAlertBanner() {
                         </CarouselItem>
                     ))}
                 </CarouselContent>
-                {alerts.length > 1 && (
+                {sortedAlerts.length > 1 && (
                     <>
                         <CarouselPrevious className="ml-14" />
                         <CarouselNext className="mr-14"/>
@@ -116,5 +123,3 @@ export function LostPetAlertBanner() {
         </div>
     )
 }
-
-    
