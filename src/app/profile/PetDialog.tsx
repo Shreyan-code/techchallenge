@@ -37,6 +37,8 @@ const petSchema = z.object({
   age: z.string().min(1, 'Pet age is required'),
   bio: z.string().max(200, 'Bio must be 200 characters or less').optional(),
   imageUrl: z.string().optional(),
+  vaccinations: z.array(z.any()).optional(),
+  medicalNotes: z.array(z.any()).optional(),
 });
 
 type PetFormValues = z.infer<typeof petSchema>;
@@ -66,12 +68,12 @@ export function PetDialog({ pet, children }: PetDialogProps) {
 
   const form = useForm<PetFormValues>({
     resolver: zodResolver(petSchema),
-    defaultValues: pet || { name: '', breed: '', age: '', bio: '', imageUrl: '' },
+    defaultValues: pet || { name: '', breed: '', age: '', bio: '', imageUrl: '', vaccinations: [], medicalNotes: [] },
   });
   
   useEffect(() => {
     if (isOpen) {
-      form.reset(pet || { name: '', breed: '', age: '', bio: '', imageUrl: '' });
+      form.reset(pet || { name: '', breed: '', age: '', bio: '', imageUrl: '', vaccinations: [], medicalNotes: [] });
       setImagePreview(pet?.imageUrl || null);
     }
   }, [isOpen, pet, form]);
@@ -111,7 +113,9 @@ export function PetDialog({ pet, children }: PetDialogProps) {
     try {
       const finalData = {
         ...data,
-        imageUrl: form.getValues('imageUrl') || (pet ? '' : `https://picsum.photos/seed/${crypto.randomUUID()}/200`)
+        imageUrl: form.getValues('imageUrl') || (pet ? '' : `https://picsum.photos/seed/${crypto.randomUUID()}/200`),
+        vaccinations: data.vaccinations || [],
+        medicalNotes: data.medicalNotes || [],
       };
 
       if (pet) {

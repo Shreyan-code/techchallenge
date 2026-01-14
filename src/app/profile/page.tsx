@@ -12,8 +12,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
-import { Edit, Loader2, PlusCircle, Trash2, MapPin } from 'lucide-react';
+import { Edit, Loader2, PlusCircle, Trash2, MapPin, HeartPulse } from 'lucide-react';
 import { ProfileEditDialog } from './ProfileEditDialog';
 import { PetDialog } from './PetDialog';
 import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -27,7 +28,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { MedicalRecordDialog } from './MedicalRecordDialog';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -122,7 +124,7 @@ export default function ProfilePage() {
         <div className="grid gap-6 sm:grid-cols-2">
           {pets && pets.length > 0 ? (
             pets.map((pet) => (
-            <Card key={pet.id} className="relative group">
+            <Card key={pet.id} className="relative group flex flex-col">
               <CardHeader className="flex flex-row items-center gap-4">
                 <div className="relative h-24 w-24 rounded-lg overflow-hidden">
                    <Image
@@ -141,9 +143,17 @@ export default function ProfilePage() {
                   </CardDescription>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-grow">
                 <p className="text-sm text-muted-foreground">{pet.bio}</p>
               </CardContent>
+              <CardFooter>
+                <MedicalRecordDialog pet={pet} isOwner={true}>
+                  <Button variant="secondary" className="w-full">
+                    <HeartPulse className="mr-2 h-4 w-4" />
+                    Medical Records
+                  </Button>
+                </MedicalRecordDialog>
+              </CardFooter>
                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                 <PetDialog pet={pet}>
                   <Button variant="outline" size="icon" className="h-8 w-8">

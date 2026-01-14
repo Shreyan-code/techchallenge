@@ -13,10 +13,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Loader2, MessageSquare, MapPin, PlusCircle } from 'lucide-react';
+import { Loader2, MessageSquare, MapPin, PlusCircle, HeartPulse } from 'lucide-react';
 import Link from 'next/link';
 import { ProfileEditDialog } from '../ProfileEditDialog';
 import { PetDialog } from '../PetDialog';
+import { MedicalRecordDialog } from '../MedicalRecordDialog';
 
 
 export default function UserProfilePage() {
@@ -153,7 +154,7 @@ export default function UserProfilePage() {
         <div className="grid gap-6 sm:grid-cols-2">
           {pets && pets.length > 0 ? (
             pets.map((pet) => (
-              <Card key={pet.id} className="relative group">
+              <Card key={pet.id} className="flex flex-col">
                 <CardHeader className="flex flex-row items-center gap-4">
                   <div className="relative h-24 w-24 rounded-lg overflow-hidden">
                     <Image
@@ -172,9 +173,17 @@ export default function UserProfilePage() {
                     </CardDescription>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-grow">
                   <p className="text-sm text-muted-foreground">{pet.bio}</p>
                 </CardContent>
+                <CardFooter>
+                   <MedicalRecordDialog pet={pet} isOwner={isOwnProfile}>
+                    <Button variant="secondary" className="w-full">
+                      <HeartPulse className="mr-2 h-4 w-4" />
+                      Medical Records
+                    </Button>
+                  </MedicalRecordDialog>
+                </CardFooter>
               </Card>
             ))
           ) : (

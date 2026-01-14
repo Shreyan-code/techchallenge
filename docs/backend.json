@@ -106,6 +106,31 @@
         "bio": {
           "type": "string",
           "description": "A short biography or description of the pet."
+        },
+        "vaccinations": {
+          "type": "array",
+          "description": "A list of vaccination records for the pet.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "vaccine": { "type": "string" },
+              "date": { "type": "string", "format": "date-time" },
+              "nextDueDate": { "type": "string", "format": "date-time" }
+            },
+            "required": ["vaccine", "date"]
+          }
+        },
+        "medicalNotes": {
+          "type": "array",
+          "description": "A list of medical notes for the pet.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "note": { "type": "string" },
+              "date": { "type": "string", "format": "date-time" }
+            },
+            "required": ["note", "date"]
+          }
         }
       },
       "required": [
