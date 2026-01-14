@@ -28,7 +28,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { identifyBreedAction } from '@/lib/actions';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
@@ -71,7 +70,6 @@ export function OnboardingClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
   const [petImagePreviews, setPetImagePreviews] = useState<(string | null)[]>([]);
-  const [isIdentifying, setIsIdentifying] = useState<boolean[]>([]);
 
 
   const form = useForm<OnboardingFormValues>({
@@ -105,34 +103,15 @@ export function OnboardingClient() {
   const handlePetImageChange = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const newIdentifying = [...isIdentifying];
-      newIdentifying[index] = true;
-      setIsIdentifying(newIdentifying);
       try {
         const dataUri = await fileToDataUri(file);
         const newPreviews = [...petImagePreviews];
         newPreviews[index] = dataUri;
         setPetImagePreviews(newPreviews);
         form.setValue(`pets.${index}.imageUrl`, dataUri);
-
-        const formData = new FormData();
-        formData.set('photoDataUri', dataUri);
-        const result = await identifyBreedAction(null, formData);
-
-        if (result.success && result.data) {
-          form.setValue(`pets.${index}.breed`, result.data.identifiedBreed);
-          toast({ title: 'Breed Identified!', description: `We think it's a ${result.data.identifiedBreed}.` });
-        } else {
-          throw new Error(result.error || 'Failed to identify breed.');
-        }
-
       } catch (error) {
-        console.error("Error identifying breed:", error);
-        toast({ variant: 'destructive', title: 'Could not identify breed.' });
-      } finally {
-        const newIdentifying = [...isIdentifying];
-        newIdentifying[index] = false;
-        setIsIdentifying(newIdentifying);
+        console.error("Error setting pet image:", error);
+        toast({ variant: 'destructive', title: 'Could not upload image.' });
       }
     }
   };
@@ -392,12 +371,10 @@ export function OnboardingClient() {
                                     className="hidden"
                                     accept="image/png, image/jpeg, image/webp"
                                     onChange={(e) => handlePetImageChange(index, e)}
-                                    disabled={isIdentifying[index]}
                                 />
                              </FormControl>
                         </label>
                       )}
-                      {isIdentifying[index] && <p className="text-sm text-muted-foreground flex items-center gap-2 pt-2"><Loader2 className="h-4 w-4 animate-spin"/> Identifying breed...</p>}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -474,7 +451,7 @@ export function OnboardingClient() {
               variant="outline"
               onClick={() => {
                 append({ name: '', breed: '', age: '', bio: '', imageUrl: '' });
-                setIsIdentifying([...isIdentifying, false]);
+                setPetImagePreviews([...petImagePreviews, null]);
               }}
             >
               <PlusCircle className="mr-2 h-4 w-4" />

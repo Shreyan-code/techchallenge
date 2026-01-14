@@ -57,7 +57,6 @@ const MainNav = ({ userProfile }: { userProfile: any }) => {
     { href: '/events', label: 'Events', icon: CalendarDays },
     { href: '/tips', label: 'Tips & Advice', icon: Lightbulb },
     { href: '/reminders', label: 'Reminders', icon: CalendarCheck },
-    { href: '/breed-identifier', label: 'Identifier', icon: Scan },
     { href: '/messages', label: 'Messages', icon: MessageSquare },
     { href: '/profile', label: 'Profile', icon: User },
     { href: '/alerts', label: 'Active Alerts', icon: Bell, isAlert: true },
