@@ -29,7 +29,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, X } from 'lucide-react';
-import { identifyPetBreedFromImage } from '@/ai/flows/identify-pet-breed-from-image';
 
 const petSchema = z.object({
   name: z.string().min(1, 'Pet name is required'),
@@ -37,6 +36,8 @@ const petSchema = z.object({
   age: z.string().min(1, 'Pet age is required'),
   bio: z.string().max(200, 'Bio must be 200 characters or less').optional(),
   imageUrl: z.string().optional(),
+  vaccinations: z.array(z.any()).optional(),
+  medicalNotes: z.array(z.any()).optional(),
 });
 
 type PetFormValues = z.infer<typeof petSchema>;
@@ -60,18 +61,17 @@ export function PetDialog({ pet, children }: PetDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isIdentifying, setIsIdentifying] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
 
   const form = useForm<PetFormValues>({
     resolver: zodResolver(petSchema),
-    defaultValues: pet || { name: '', breed: '', age: '', bio: '', imageUrl: '' },
+    defaultValues: pet || { name: '', breed: '', age: '', bio: '', imageUrl: '', vaccinations: [], medicalNotes: [] },
   });
   
   useEffect(() => {
     if (isOpen) {
-      form.reset(pet || { name: '', breed: '', age: '', bio: '', imageUrl: '' });
+      form.reset(pet || { name: '', breed: '', age: '', bio: '', imageUrl: '', vaccinations: [], medicalNotes: [] });
       setImagePreview(pet?.imageUrl || null);
     }
   }, [isOpen, pet, form]);
@@ -79,21 +79,13 @@ export function PetDialog({ pet, children }: PetDialogProps) {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setIsIdentifying(true);
       try {
         const dataUri = await fileToDataUri(file);
         setImagePreview(dataUri);
         form.setValue('imageUrl', dataUri);
-        const result = await identifyPetBreedFromImage({ photoDataUri: dataUri });
-        if (result.identifiedBreed) {
-          form.setValue('breed', result.identifiedBreed);
-          toast({ title: 'Breed Identified!', description: `We think it's a ${result.identifiedBreed}.` });
-        }
       } catch (error) {
-        console.error("Error identifying breed:", error);
-        toast({ variant: 'destructive', title: 'Could not identify breed.' });
-      } finally {
-        setIsIdentifying(false);
+        console.error("Error setting image:", error);
+        toast({ variant: 'destructive', title: 'Could not upload image.' });
       }
     }
   };
@@ -111,7 +103,9 @@ export function PetDialog({ pet, children }: PetDialogProps) {
     try {
       const finalData = {
         ...data,
-        imageUrl: form.getValues('imageUrl') || (pet ? '' : `https://picsum.photos/seed/${crypto.randomUUID()}/200`)
+        imageUrl: form.getValues('imageUrl') || (pet ? '' : `https://picsum.photos/seed/${crypto.randomUUID()}/200`),
+        vaccinations: data.vaccinations || [],
+        medicalNotes: data.medicalNotes || [],
       };
 
       if (pet) {
@@ -250,16 +244,14 @@ export function PetDialog({ pet, children }: PetDialogProps) {
                             className="hidden"
                             accept="image/png, image/jpeg, image/webp"
                             onChange={handleFileChange}
-                            disabled={isIdentifying}
                         />
                       </FormControl>
                 </label>
               )}
-              {isIdentifying && <p className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin"/> Identifying breed...</p>}
             </FormItem>
 
             <DialogFooter>
-              <Button type="submit" disabled={isSubmitting || isIdentifying}>
+              <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save
               </Button>

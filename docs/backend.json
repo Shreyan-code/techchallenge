@@ -106,6 +106,31 @@
         "bio": {
           "type": "string",
           "description": "A short biography or description of the pet."
+        },
+        "vaccinations": {
+          "type": "array",
+          "description": "A list of vaccination records for the pet.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "vaccine": { "type": "string" },
+              "date": { "type": "string", "format": "date-time" },
+              "nextDueDate": { "type": "string", "format": "date-time" }
+            },
+            "required": ["vaccine", "date"]
+          }
+        },
+        "medicalNotes": {
+          "type": "array",
+          "description": "A list of medical notes for the pet.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "note": { "type": "string" },
+              "date": { "type": "string", "format": "date-time" }
+            },
+            "required": ["note", "date"]
+          }
         }
       },
       "required": [
@@ -279,6 +304,46 @@
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the comment was created." }
       },
       "required": ["id", "authorId", "advicePostId", "content", "createdAt"]
+    },
+    "Reminder": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Reminder",
+      "type": "object",
+      "description": "Represents a user-scheduled reminder for their pets.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the reminder." },
+        "userId": { "type": "string", "description": "The UID of the user who owns this reminder." },
+        "title": { "type": "string", "description": "The title or main text of the reminder." },
+        "notes": { "type": "string", "description": "Additional details for the reminder." },
+        "dateTime": { "type": "string", "format": "date-time", "description": "The date and time the reminder is set for." },
+        "completed": { "type": "boolean", "description": "Whether the reminder has been marked as complete." },
+        "recurrence": {
+          "type": "object",
+          "description": "The recurrence rule for the reminder.",
+          "properties": {
+            "frequency": { "type": "string", "enum": ["once", "daily", "weekly", "monthly"] },
+            "dayOfWeek": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      },
+      "required": ["id", "userId", "title", "dateTime", "completed"]
+    },
+    "LostPetAlert": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LostPetAlert",
+      "type": "object",
+      "description": "Represents an active alert for a lost pet.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the alert." },
+        "petId": { "type": "string", "description": "The ID of the lost pet." },
+        "ownerId": { "type": "string", "description": "The UID of the user who owns the pet." },
+        "petName": { "type": "string", "description": "The name of the lost pet." },
+        "petImageUrl": { "type": "string", "format": "uri", "description": "URL of the pet's photo." },
+        "lastSeenLocation": { "type": "string", "description": "Optional last known location of the pet." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the alert was created." },
+        "status": { "type": "string", "enum": ["active", "resolved"], "description": "The current status of the alert." }
+      },
+      "required": ["id", "petId", "ownerId", "petName", "petImageUrl", "createdAt", "status"]
     }
   },
   "auth": {
@@ -378,8 +443,28 @@
             { "name": "commentId", "description": "The unique ID of the comment." }
           ]
         }
+      },
+      {
+        "path": "reminders/{reminderId}",
+        "definition": {
+          "entityName": "Reminder",
+          "schema": { "$ref": "#/backend/entities/Reminder" },
+          "description": "Stores user-specific reminders.",
+          "params": [{ "name": "reminderId", "description": "The unique ID of the reminder." }]
+        }
+      },
+      {
+        "path": "lostPetAlerts/{alertId}",
+        "definition": {
+          "entityName": "LostPetAlert",
+          "schema": { "$ref": "#/backend/entities/LostPetAlert" },
+          "description": "Stores active lost pet alerts.",
+          "params": [{ "name": "alertId", "description": "The unique ID of the alert." }]
+        }
       }
     ],
     "reasoning": "The Firestore structure is designed for a social media application for pets. It includes top-level collections for users, pets, posts, events, conversations, and advice posts to allow for scalable queries. Comments and messages are stored as subcollections within their respective parent documents (posts, conversations, advice posts) to maintain a logical hierarchy and enable efficient retrieval. Denormalized data in conversations (participantDetails) is used to avoid extra lookups when displaying conversation lists."
   }
 }
+
+    

@@ -35,57 +35,61 @@ export default function SignupPage() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      const user = userCredential.user;
+    createUserWithEmailAndPassword(auth, email, password)
+      .then(async (userCredential) => {
+        const user = userCredential.user;
+        const [firstName, ...lastName] = fullName.split(' ');
 
-      const [firstName, ...lastName] = fullName.split(' ');
+        // Update profile and create user document in Firestore
+        await updateProfile(user, {
+          displayName: fullName,
+        });
 
-      await updateProfile(user, {
-        displayName: fullName,
+        const userProfile = {
+          id: user.uid,
+          userName: email.split('@')[0],
+          email: user.email,
+          firstName: firstName || '',
+          lastName: lastName.join(' ') || '',
+          profilePicture: user.photoURL || '',
+          bio: '',
+          city: '',
+          state: '',
+          country: '',
+          petIds: [],
+          onboardingCompleted: false,
+          discoverable: true,
+        };
+
+        const userDocRef = doc(firestore, 'users', user.uid);
+        setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
+
+        toast({
+          title: 'Account Created!',
+          description: "Welcome to PetConnect! Let's get you set up...",
+        });
+
+        // Redirect to onboarding after successful signup and profile creation
+        router.push('/onboarding');
+      })
+      .catch((error: any) => {
+        console.error('Signup Error:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Signup Failed',
+          description:
+            error.code === 'auth/email-already-in-use'
+              ? 'This email is already registered. Try logging in.'
+              : error.message || 'Could not create your account. Please try again.',
+        });
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
-
-      const userProfile = {
-        id: user.uid,
-        userName: email.split('@')[0],
-        email: user.email,
-        firstName: firstName || '',
-        lastName: lastName.join(' ') || '',
-        profilePicture: user.photoURL || '',
-        bio: '',
-        petIds: [],
-        onboardingCompleted: false,
-      };
-
-      const userDocRef = doc(firestore, 'users', user.uid);
-      setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
-
-      toast({
-        title: 'Account Created!',
-        description: 'Welcome to PetConnect! Lets get you set up...',
-      });
-
-      router.push('/onboarding');
-    } catch (error: any) {
-      console.error('Signup Error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Signup Failed',
-        description:
-          error.message ||
-          'Could not create your account. Please try again.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   return (
@@ -131,6 +135,7 @@ export default function SignupPage() {
                 id="password"
                 type="password"
                 required
+                minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
@@ -158,5 +163,3 @@ export default function SignupPage() {
     </Card>
   );
 }
-
-    

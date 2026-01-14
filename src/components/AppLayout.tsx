@@ -16,6 +16,9 @@ import {
   Compass,
   CalendarDays,
   Lightbulb,
+  CalendarCheck,
+  Siren,
+  Bell,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -33,15 +36,16 @@ import { Button } from '@/components/ui/button';
 import { useUser, useDoc, useMemoFirebase, useAuth } from '@/firebase';
 import { doc, getFirestore } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { LostPetAlertBanner } from './LostPetAlertBanner';
 
 const MainNav = ({ userProfile }: { userProfile: any }) => {
   const pathname = usePathname();
   const hasLocation = userProfile?.city && userProfile?.state;
 
   const menuItems = [
-    { href: '/', label: 'Feed', icon: LayoutGrid },
+    { href: '/feed', label: 'Feed', icon: LayoutGrid },
     { href: '/create-post', label: 'Create Post', icon: PlusSquare },
     {
       href: '/find',
@@ -52,23 +56,25 @@ const MainNav = ({ userProfile }: { userProfile: any }) => {
     },
     { href: '/events', label: 'Events', icon: CalendarDays },
     { href: '/tips', label: 'Tips & Advice', icon: Lightbulb },
-    { href: '/breed-identifier', label: 'Identifier', icon: Scan },
+    { href: '/reminders', label: 'Reminders', icon: CalendarCheck },
     { href: '/messages', label: 'Messages', icon: MessageSquare },
-    { href: '/advice', label: 'AI Chat', icon: BrainCircuit },
     { href: '/profile', label: 'Profile', icon: User },
+    { href: '/alerts', label: 'Active Alerts', icon: Bell, isAlert: true },
+    { href: '/send-alert', label: 'Send Alert', icon: Siren, isAlert: true },
   ];
 
   return (
-    <SidebarMenu>
+     <SidebarMenu>
       {menuItems.map((item) => (
         <SidebarMenuItem key={item.label}>
+          <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild disabled={!item.disabled}>
               <div className={cn(item.disabled && "cursor-not-allowed")}>
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === item.href}
-                  className="justify-start"
+                  className={cn("justify-start", item.isAlert && "text-destructive hover:bg-destructive/10 hover:text-destructive")}
                   disabled={item.disabled}
                   tooltip={{ children: item.label, side: 'right' }}
                 >
@@ -85,6 +91,7 @@ const MainNav = ({ userProfile }: { userProfile: any }) => {
               </TooltipContent>
             )}
           </Tooltip>
+          </TooltipProvider>
         </SidebarMenuItem>
       ))}
     </SidebarMenu>
@@ -104,7 +111,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
 
-  const isAuthPage = pathname === '/login' || pathname === '/signup';
+  const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/';
   const isOnboardingPage = pathname === '/onboarding';
 
   useEffect(() => {
@@ -112,23 +119,23 @@ export function AppLayout({ children }: { children: ReactNode }) {
     if (isLoading) return;
 
     if (!user && !isAuthPage) {
-      router.push('/login');
+      router.push('/');
     }
 
     if (user) {
-      if (isAuthPage) {
-        router.push('/');
+      if (isAuthPage && pathname !== '/') {
+        router.push('/feed');
       } else if (userProfile && !userProfile.onboardingCompleted && !isOnboardingPage) {
         router.push('/onboarding');
       } else if (userProfile && userProfile.onboardingCompleted && isOnboardingPage) {
-        router.push('/');
+        router.push('/feed');
       }
     }
-  }, [user, userProfile, isUserLoading, isProfileLoading, isAuthPage, isOnboardingPage, router]);
+  }, [user, userProfile, isUserLoading, isProfileLoading, isAuthPage, isOnboardingPage, router, pathname]);
 
   const handleLogout = async () => {
     await signOut(auth);
-    router.push('/login');
+    router.push('/');
   };
 
   const isLoading = isUserLoading || (user && isProfileLoading);
@@ -141,17 +148,26 @@ export function AppLayout({ children }: { children: ReactNode }) {
     );
   }
   
-  if (isAuthPage || isOnboardingPage || !user) {
+  if (isAuthPage || !user) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
         {children}
       </main>
     );
   }
+  
+  if (isOnboardingPage) {
+     return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+        {children}
+      </main>
+    );
+  }
+
 
   return (
     <SidebarProvider>
-      <Sidebar>
+      <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
             <Button
@@ -160,7 +176,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               className="h-10 w-10 shrink-0"
               asChild
             >
-              <Link href="/">
+              <Link href="/feed">
                 <PawPrint className="text-primary" />
               </Link>
             </Button>
@@ -189,13 +205,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
       </Sidebar>
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 md:hidden">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
+          <Link href="/feed" className="flex items-center gap-2 font-semibold">
             <PawPrint className="h-6 w-6 text-primary" />
             <span className="font-headline text-lg">PetConnect</span>
           </Link>
           <SidebarTrigger />
         </header>
-        <div className="p-4 sm:p-6">{children}</div>
+         <header className="sticky top-0 z-10 hidden h-16 items-center justify-start gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 md:flex">
+          <SidebarTrigger />
+        </header>
+        <div className="flex flex-col">
+          <LostPetAlertBanner />
+          <div className="p-4 sm:p-6">{children}</div>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

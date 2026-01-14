@@ -1,17 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Allow any authenticated user to read/write any collection
+    // This is not secure for production but useful for rapid development
     match /{document=**} {
       allow read, write: if request.auth != null;
-    }
-     // Conversations can only be read/written by participants.
-    match /conversations/{conversationId} {
-      allow read, write: if request.auth.uid in resource.data.participants;
-      
-      // Messages can only be read/written by participants in the conversation.
-      match /messages/{messageId} {
-        allow read, write: if request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
-      }
     }
   }
 }
