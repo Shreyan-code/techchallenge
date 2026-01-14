@@ -36,6 +36,7 @@ import { doc, getFirestore } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { LostPetAlertBanner } from './LostPetAlertBanner';
 
 const MainNav = ({ userProfile }: { userProfile: any }) => {
   const pathname = usePathname();
@@ -208,8 +209,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
          <header className="sticky top-0 z-10 hidden h-16 items-center justify-start gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 md:flex">
           <SidebarTrigger />
         </header>
-        <div className="p-4 sm:p-6">{children}</div>
+        <div className="flex flex-col">
+          <LostPetAlertBanner />
+          <div className="p-4 sm:p-6">{children}</div>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );
 }
+
+    

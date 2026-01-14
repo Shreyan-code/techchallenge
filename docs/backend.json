@@ -327,6 +327,23 @@
         }
       },
       "required": ["id", "userId", "title", "dateTime", "completed"]
+    },
+    "LostPetAlert": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LostPetAlert",
+      "type": "object",
+      "description": "Represents an active alert for a lost pet.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the alert." },
+        "petId": { "type": "string", "description": "The ID of the lost pet." },
+        "ownerId": { "type": "string", "description": "The UID of the user who owns the pet." },
+        "petName": { "type": "string", "description": "The name of the lost pet." },
+        "petImageUrl": { "type": "string", "format": "uri", "description": "URL of the pet's photo." },
+        "lastSeenLocation": { "type": "string", "description": "Optional last known location of the pet." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the alert was created." },
+        "status": { "type": "string", "enum": ["active", "resolved"], "description": "The current status of the alert." }
+      },
+      "required": ["id", "petId", "ownerId", "petName", "petImageUrl", "createdAt", "status"]
     }
   },
   "auth": {
@@ -434,6 +451,15 @@
           "schema": { "$ref": "#/backend/entities/Reminder" },
           "description": "Stores user-specific reminders.",
           "params": [{ "name": "reminderId", "description": "The unique ID of the reminder." }]
+        }
+      },
+      {
+        "path": "lostPetAlerts/{alertId}",
+        "definition": {
+          "entityName": "LostPetAlert",
+          "schema": { "$ref": "#/backend/entities/LostPetAlert" },
+          "description": "Stores active lost pet alerts.",
+          "params": [{ "name": "alertId", "description": "The unique ID of the alert." }]
         }
       }
     ],

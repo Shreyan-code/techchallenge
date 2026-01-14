@@ -48,13 +48,15 @@ service cloud.firestore {
     }
     
     match /reminders/{reminderId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+        allow list, read, write: if request.auth != null;
     }
 
-    match /reminders/{reminderId} {
-        allow list: if request.auth != null;
-        allow read, write: if request.auth.uid == resource.data.userId;
+    match /lostPetAlerts/{alertId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth.uid == request.resource.data.ownerId;
+      allow update, delete: if request.auth.uid == resource.data.ownerId;
     }
   }
 }
+
+    

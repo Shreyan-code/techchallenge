@@ -14,7 +14,7 @@ import {
   CardTitle,
   CardFooter,
 } from '@/components/ui/card';
-import { Edit, Loader2, PlusCircle, Trash2, MapPin, HeartPulse } from 'lucide-react';
+import { Edit, Loader2, PlusCircle, Trash2, MapPin, HeartPulse, Siren } from 'lucide-react';
 import { ProfileEditDialog } from './ProfileEditDialog';
 import { PetDialog } from './PetDialog';
 import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -30,6 +30,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { MedicalRecordDialog } from './MedicalRecordDialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { LostPetAlertDialog } from '@/components/LostPetAlertDialog';
+
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -78,6 +81,8 @@ export default function ProfilePage() {
   }
   
   const locationString = [userProfile.city, userProfile.state, userProfile.country].filter(Boolean).join(', ');
+  const hasLocation = !!userProfile.city && !!userProfile.state;
+
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-8">
@@ -146,13 +151,19 @@ export default function ProfilePage() {
               <CardContent className="flex-grow">
                 <p className="text-sm text-muted-foreground">{pet.bio}</p>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="grid grid-cols-2 gap-2">
                 <MedicalRecordDialog pet={pet} isOwner={true}>
                   <Button variant="secondary" className="w-full">
                     <HeartPulse className="mr-2 h-4 w-4" />
-                    Medical Records
+                    Records
                   </Button>
                 </MedicalRecordDialog>
+                <LostPetAlertDialog pet={pet} disabled={!hasLocation}>
+                   <Button variant="destructive" className="w-full" disabled={!hasLocation}>
+                     <Siren className="mr-2 h-4 w-4" />
+                     Report Lost
+                   </Button>
+                </LostPetAlertDialog>
               </CardFooter>
                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                 <PetDialog pet={pet}>
@@ -200,3 +211,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
