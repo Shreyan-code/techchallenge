@@ -316,7 +316,8 @@
         "title": { "type": "string", "description": "The title or main text of the reminder." },
         "notes": { "type": "string", "description": "Additional details for the reminder." },
         "dateTime": { "type": "string", "format": "date-time", "description": "The date and time the reminder is set for." },
-        "completed": { "type": "boolean", "description": "Whether the reminder has been marked as complete." }
+        "completed": { "type": "boolean", "description": "Whether the reminder has been marked as complete." },
+        "frequency": { "type": "string", "enum": ["once", "daily", "weekly", "monthly"], "description": "The recurrence frequency of the reminder." }
       },
       "required": ["id", "userId", "title", "dateTime", "completed"]
     }
@@ -432,3 +433,5 @@
     "reasoning": "The Firestore structure is designed for a social media application for pets. It includes top-level collections for users, pets, posts, events, conversations, and advice posts to allow for scalable queries. Comments and messages are stored as subcollections within their respective parent documents (posts, conversations, advice posts) to maintain a logical hierarchy and enable efficient retrieval. Denormalized data in conversations (participantDetails) is used to avoid extra lookups when displaying conversation lists."
   }
 }
+
+    

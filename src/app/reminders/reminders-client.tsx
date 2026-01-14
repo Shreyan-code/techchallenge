@@ -33,6 +33,7 @@ import {
   CalendarCheck,
   CheckCircle2,
   Circle,
+  Repeat,
 } from 'lucide-react';
 import {
   Form,
@@ -42,6 +43,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import {
@@ -62,6 +70,7 @@ const reminderSchema = z.object({
   notes: z.string().optional(),
   date: z.coerce.date({ required_error: 'A date is required.' }),
   time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Please enter a valid time in HH:MM format."),
+  frequency: z.enum(['once', 'daily', 'weekly', 'monthly']),
 });
 
 type ReminderFormValues = z.infer<typeof reminderSchema>;
@@ -86,7 +95,7 @@ export function RemindersClient() {
 
   const form = useForm<ReminderFormValues>({
     resolver: zodResolver(reminderSchema),
-    defaultValues: { title: '', notes: '', time: '09:00' },
+    defaultValues: { title: '', notes: '', time: '09:00', frequency: 'once' },
   });
 
   const onSubmit = async (data: ReminderFormValues) => {
@@ -104,10 +113,11 @@ export function RemindersClient() {
       notes: data.notes || '',
       dateTime: Timestamp.fromDate(combinedDateTime),
       completed: false,
+      frequency: data.frequency,
     });
     
     toast({ title: 'Reminder Set!', description: `We'll help you remember to ${data.title}.` });
-    form.reset({ title: '', notes: '', time: '09:00' });
+    form.reset({ title: '', notes: '', time: '09:00', frequency: 'once' });
     setIsSubmitting(false);
   };
   
@@ -173,7 +183,7 @@ export function RemindersClient() {
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                  <FormField
                   control={form.control}
                   name="date"
@@ -200,6 +210,29 @@ export function RemindersClient() {
                       <FormControl>
                         <Input type="time" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="frequency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Frequency</FormLabel>
+                       <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select frequency" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="once">Once</SelectItem>
+                          <SelectItem value="daily">Daily</SelectItem>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -266,9 +299,17 @@ function ReminderItem({ reminder, onToggle, onDelete }: { reminder: any, onToggl
                     {reminder.title}
                 </p>
                 <div className={cn("text-sm", reminder.completed ? "text-muted-foreground/80" : "text-muted-foreground")}>
-                    <p className={cn(isOverdue && "text-destructive font-semibold")}>
-                        {isToday(dateTime) ? `Today at ${format(dateTime, 'p')}` : format(dateTime, 'MMM d, yyyy @ p')}
-                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className={cn(isOverdue && "text-destructive font-semibold")}>
+                          {isToday(dateTime) ? `Today at ${format(dateTime, 'p')}` : format(dateTime, 'MMM d, yyyy @ p')}
+                      </p>
+                      {reminder.frequency && reminder.frequency !== 'once' && (
+                        <div className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-muted">
+                          <Repeat className="h-3 w-3" />
+                          <span className="capitalize">{reminder.frequency}</span>
+                        </div>
+                      )}
+                    </div>
                     {reminder.notes && <p className="mt-1">{reminder.notes}</p>}
                 </div>
            </div>
@@ -296,3 +337,5 @@ function ReminderItem({ reminder, onToggle, onDelete }: { reminder: any, onToggl
         </div>
     )
 }
+
+    
