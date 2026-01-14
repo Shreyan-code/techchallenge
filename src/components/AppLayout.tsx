@@ -18,6 +18,7 @@ import {
   Lightbulb,
   CalendarCheck,
   Siren,
+  Bell,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -59,6 +60,7 @@ const MainNav = ({ userProfile }: { userProfile: any }) => {
     { href: '/breed-identifier', label: 'Identifier', icon: Scan },
     { href: '/messages', label: 'Messages', icon: MessageSquare },
     { href: '/profile', label: 'Profile', icon: User },
+    { href: '/alerts', label: 'Active Alerts', icon: Bell, isAlert: true },
     { href: '/send-alert', label: 'Send Alert', icon: Siren, isAlert: true },
   ];
 
