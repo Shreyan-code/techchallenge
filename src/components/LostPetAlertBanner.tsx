@@ -23,7 +23,7 @@ export function LostPetAlertBanner() {
     
     const sortedAlerts = useMemo(() => {
         if (!alerts) return [];
-        return [...alerts].sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+        return [...alerts].sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds);
     }, [alerts]);
 
 
@@ -96,7 +96,7 @@ export function LostPetAlertBanner() {
                                                 LOST PET ALERT: Have you seen {alert.petName}?
                                             </AlertTitle>
                                             <AlertDescription>
-                                                Last seen {alert.lastSeenLocation ? `near ${alert.lastSeenLocation}` : ''} about {formatDistanceToNow(alert.createdAt.toDate(), { addSuffix: true })}.
+                                                Last seen {alert.lastSeenLocation ? `near ${alert.lastSeenLocation}` : ''} {alert.createdAt ? `about ${formatDistanceToNow(alert.createdAt.toDate(), { addSuffix: true })}` : ''}.
                                             </AlertDescription>
                                         </div>
                                         <div className="flex items-center gap-2">
