@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format, isPast, isToday } from 'date-fns';
+import { format, isPast, isToday, addDays, addWeeks, addMonths, getDay, setDay, startOfDay } from 'date-fns';
 import {
   useCollection,
   useFirestore,
@@ -77,13 +77,13 @@ const reminderSchema = z.object({
 type ReminderFormValues = z.infer<typeof reminderSchema>;
 
 const daysOfWeek = [
-  { value: 'SU', label: 'S' },
-  { value: 'MO', label: 'M' },
-  { value: 'TU', label: 'T' },
-  { value: 'WE', label: 'W' },
-  { value: 'TH', label: 'T' },
-  { value: 'FR', label: 'F' },
-  { value: 'SA', label: 'S' },
+  { value: 'SU', label: 'S', dayIndex: 0 },
+  { value: 'MO', label: 'M', dayIndex: 1 },
+  { value: 'TU', label: 'T', dayIndex: 2 },
+  { value: 'WE', label: 'W', dayIndex: 3 },
+  { value: 'TH', label: 'T', dayIndex: 4 },
+  { value: 'FR', label: 'F', dayIndex: 5 },
+  { value: 'SA', label: 'S', dayIndex: 6 },
 ];
 
 export function RemindersClient() {
@@ -150,8 +150,72 @@ export function RemindersClient() {
   };
   
   const toggleComplete = (reminder: any) => {
+    if (!user) return;
+  
     const reminderRef = doc(firestore, 'reminders', reminder.id);
-    updateDocumentNonBlocking(reminderRef, { completed: !reminder.completed });
+  
+    // If it's a recurring reminder and we're marking it complete
+    if (reminder.recurrence?.frequency !== 'once' && !reminder.completed) {
+      const currentDateTime = reminder.dateTime.toDate();
+      let nextDateTime: Date | null = null;
+  
+      switch (reminder.recurrence.frequency) {
+        case 'daily':
+          nextDateTime = addDays(currentDateTime, 1);
+          break;
+        case 'weekly':
+          const selectedDays = reminder.recurrence.dayOfWeek
+            .map((dayValue: string) => daysOfWeek.find(d => d.value === dayValue)?.dayIndex)
+            .filter((d: number | undefined) => d !== undefined)
+            .sort();
+            
+          if (selectedDays.length > 0) {
+              const currentDay = getDay(currentDateTime);
+              let nextDayIndex = -1;
+
+              // Find the next scheduled day in the week
+              for(const day of selectedDays) {
+                  if (day > currentDay) {
+                      nextDayIndex = day;
+                      break;
+                  }
+              }
+              
+              if (nextDayIndex !== -1) {
+                  // Next occurrence is in the same week
+                  nextDateTime = setDay(currentDateTime, nextDayIndex, { weekStartsOn: 0 });
+              } else {
+                  // Next occurrence is in the next week (wrap around)
+                  nextDateTime = setDay(addWeeks(currentDateTime, 1), selectedDays[0], { weekStartsOn: 0 });
+              }
+          }
+          break;
+        case 'monthly':
+          nextDateTime = addMonths(currentDateTime, 1);
+          break;
+      }
+  
+      if (nextDateTime) {
+        // Create the next reminder instance
+        const remindersCol = collection(firestore, 'reminders');
+        addDocumentNonBlocking(remindersCol, {
+          ...reminder,
+          id: undefined, // Let firestore generate a new ID
+          dateTime: Timestamp.fromDate(nextDateTime),
+          completed: false, // The new one is not completed
+        });
+      }
+  
+      // Mark the current one as complete and make it non-recurring
+      updateDocumentNonBlocking(reminderRef, { 
+        completed: true,
+        recurrence: { ...reminder.recurrence, frequency: 'once' } 
+      });
+  
+    } else {
+      // For non-recurring reminders or un-completing any reminder
+      updateDocumentNonBlocking(reminderRef, { completed: !reminder.completed });
+    }
   };
   
   const deleteReminder = (reminderId: string) => {
@@ -343,7 +407,8 @@ function formatRecurrence(recurrence: ReminderFormValues['recurrence']) {
     const base = `Repeats ${recurrence.frequency}`;
     if (recurrence.frequency === 'weekly' && recurrence.dayOfWeek && recurrence.dayOfWeek.length > 0) {
         const sortedDays = recurrence.dayOfWeek
-            .sort((a, b) => daysOfWeek.findIndex(d => d.value === a) - daysOfWeek.findIndex(d => d.value === b))
+            .map(dayValue => daysOfWeek.find(d => d.value === dayValue)?.label || '')
+            .filter(Boolean)
             .join(', ');
         return `${base} on ${sortedDays}`;
     }
@@ -408,5 +473,3 @@ function ReminderItem({ reminder, onToggle, onDelete }: { reminder: any, onToggl
         </div>
     )
 }
-
-    
