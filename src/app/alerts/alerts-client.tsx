@@ -11,6 +11,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { useMemo } from 'react';
 
 function AlertCard({ alert }: { alert: any }) {
     const { user } = useUser();
@@ -116,12 +117,17 @@ export function AlertsClient() {
   const firestore = useFirestore();
 
   const alertsQuery = useMemoFirebase(
-    () => query(collection(firestore, 'lostPetAlerts'), where('status', '==', 'active'), orderBy('createdAt', 'desc')),
+    () => query(collection(firestore, 'lostPetAlerts'), where('status', '==', 'active')),
     [firestore]
   );
   
   const { data: alerts, isLoading } = useCollection(alertsQuery);
   
+  const sortedAlerts = useMemo(() => {
+    if (!alerts) return [];
+    return [...alerts].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+  }, [alerts]);
+
   return (
       <div className="space-y-6">
         <div>
@@ -133,14 +139,14 @@ export function AlertsClient() {
             <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
         )}
 
-        {!isLoading && alerts?.length === 0 && (
+        {!isLoading && sortedAlerts?.length === 0 && (
             <div className="text-center p-12 border border-dashed rounded-lg">
                  <p className="text-muted-foreground">No active alerts right now. That's great news!</p>
              </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {alerts?.map(alert => (
+            {sortedAlerts?.map(alert => (
                 <AlertCard key={alert.id} alert={alert} />
             ))}
         </div>
