@@ -35,7 +35,7 @@ import { Button } from '@/components/ui/button';
 import { useUser, useDoc, useMemoFirebase, useAuth } from '@/firebase';
 import { doc, getFirestore } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { LostPetAlertBanner } from './LostPetAlertBanner';
 
@@ -59,19 +59,20 @@ const MainNav = ({ userProfile }: { userProfile: any }) => {
     { href: '/breed-identifier', label: 'Identifier', icon: Scan },
     { href: '/messages', label: 'Messages', icon: MessageSquare },
     { href: '/profile', label: 'Profile', icon: User },
-    { href: '/profile', label: 'Send Alert', icon: Siren, isAlert: true },
+    { href: '/send-alert', label: 'Send Alert', icon: Siren, isAlert: true },
   ];
 
   return (
-    <SidebarMenu>
+     <SidebarMenu>
       {menuItems.map((item) => (
         <SidebarMenuItem key={item.label}>
+          <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild disabled={!item.disabled}>
               <div className={cn(item.disabled && "cursor-not-allowed")}>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === item.href && !item.isAlert}
+                  isActive={pathname === item.href}
                   className={cn("justify-start", item.isAlert && "text-destructive hover:bg-destructive/10 hover:text-destructive")}
                   disabled={item.disabled}
                   tooltip={{ children: item.label, side: 'right' }}
@@ -89,6 +90,7 @@ const MainNav = ({ userProfile }: { userProfile: any }) => {
               </TooltipContent>
             )}
           </Tooltip>
+          </TooltipProvider>
         </SidebarMenuItem>
       ))}
     </SidebarMenu>
