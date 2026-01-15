@@ -33,8 +33,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { useUser, useDoc, useMemoFirebase, useAuth } from '@/firebase';
-import { doc, getFirestore } from 'firebase/firestore';
+import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -101,22 +100,14 @@ const MainNav = ({ userProfile }: { userProfile: any }) => {
 export function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isUserLoading } = useUser();
+  const { user, userProfile, isUserLoading } = useUser();
   const auth = useAuth();
-  const firestore = getFirestore();
-
-  const userProfileRef = useMemoFirebase(
-    () => (user ? doc(firestore, 'users', user.uid) : null),
-    [user, firestore]
-  );
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
-
+  
   const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/';
   const isOnboardingPage = pathname === '/onboarding';
 
   useEffect(() => {
-    const isLoading = isUserLoading || (user && isProfileLoading);
-    if (isLoading) return;
+    if (isUserLoading) return;
 
     if (!user && !isAuthPage) {
       router.push('/');
@@ -131,16 +122,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
         router.push('/feed');
       }
     }
-  }, [user, userProfile, isUserLoading, isProfileLoading, isAuthPage, isOnboardingPage, router, pathname]);
+  }, [user, userProfile, isUserLoading, isAuthPage, isOnboardingPage, router, pathname]);
 
   const handleLogout = async () => {
     await signOut(auth);
     router.push('/');
   };
 
-  const isLoading = isUserLoading || (user && isProfileLoading);
-
-  if (isLoading && !isAuthPage) {
+  if (isUserLoading && !isAuthPage) {
      return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
